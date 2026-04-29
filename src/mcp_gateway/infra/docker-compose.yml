@@ -1,0 +1,144 @@
+version: "3.9"
+
+networks:
+  mcp-net:
+    driver: bridge
+
+services:
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile
+    ports:
+      - "${GATEWAY_PORT:-8000}:8000"
+    env_file: ../.env
+    volumes:
+      - ../registry/registry.json:/app/registry/registry.json
+      - ../security/policy.json:/app/security/policy.json:ro
+      - ../logs:/app/logs
+    networks: [mcp-net]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD","python3","-c","import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  echo-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.example
+    networks: [mcp-net]
+    restart: unless-stopped
+
+  jira-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.template
+      args: {TEMPLATE: templates/qa/jira_server.py, PORT: "8101"}
+    environment: [JIRA_URL, JIRA_EMAIL, JIRA_TOKEN]
+    networks: [mcp-net]
+    restart: unless-stopped
+    profiles: [qa, all]
+
+  testrail-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.template
+      args: {TEMPLATE: templates/qa/testrail_server.py, PORT: "8102"}
+    environment: [TESTRAIL_URL, TESTRAIL_EMAIL, TESTRAIL_TOKEN]
+    networks: [mcp-net]
+    restart: unless-stopped
+    profiles: [qa, all]
+
+  pytest-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.pytest
+    networks: [mcp-net]
+    restart: unless-stopped
+    volumes:
+      - ${TESTS_PATH:-./tests}:/app/tests
+    profiles: [qa, all]
+
+  github-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.template
+      args: {TEMPLATE: templates/dev/github_server.py, PORT: "8201"}
+    environment: [GITHUB_TOKEN]
+    networks: [mcp-net]
+    restart: unless-stopped
+    profiles: [dev, all]
+
+  git-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.template
+      args: {TEMPLATE: templates/dev/git_server.py, PORT: "8202"}
+    networks: [mcp-net]
+    volumes:
+      - ${REPOS_PATH:-.}:/repos
+    restart: unless-stopped
+    profiles: [dev, all]
+
+  azure-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.template
+      args: {TEMPLATE: templates/dev/azure_devops_server.py, PORT: "8203"}
+    environment: [AZURE_DEVOPS_ORG, AZURE_DEVOPS_TOKEN, AZURE_DEVOPS_PROJECT]
+    networks: [mcp-net]
+    restart: unless-stopped
+    profiles: [dev, all]
+
+  code-runner:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.template
+      args: {TEMPLATE: templates/dev/code_runner_server.py, PORT: "8204"}
+    networks: [mcp-net]
+    restart: unless-stopped
+    profiles: [dev, all]
+
+  filesystem-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.template
+      args: {TEMPLATE: templates/general/filesystem_server.py, PORT: "8301"}
+    environment:
+      - FS_ROOT=/files
+    volumes:
+      - ${FS_ROOT:-/tmp/mcp-files}:/files
+    networks: [mcp-net]
+    restart: unless-stopped
+    profiles: [general, all]
+
+  rest-api-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.template
+      args: {TEMPLATE: templates/general/rest_api_server.py, PORT: "8303"}
+    networks: [mcp-net]
+    restart: unless-stopped
+    profiles: [general, all]
+
+  slack-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.template
+      args: {TEMPLATE: templates/general/slack_server.py, PORT: "8305"}
+    environment: [SLACK_BOT_TOKEN]
+    networks: [mcp-net]
+    restart: unless-stopped
+    profiles: [general, all]
+
+  web-search-server:
+    build:
+      context: ..
+      dockerfile: infra/Dockerfile.template
+      args: {TEMPLATE: templates/general/web_search_server.py, PORT: "8306"}
+    networks: [mcp-net]
+    restart: unless-stopped
+    profiles: [general, all]

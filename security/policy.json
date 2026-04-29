@@ -1,0 +1,7 @@
+{
+  "_comment": "Optional policy file. Remove this file to allow all keys full access.",
+  "your-restricted-key-here": {
+    "allow_servers": ["echo-server"],
+    "deny_tools": []
+  }
+}

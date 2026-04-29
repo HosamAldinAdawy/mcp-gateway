@@ -1,0 +1,188 @@
+{
+  "version": "1.0",
+  "description": "MCP Gateway Trust Store",
+  "servers": [
+    {
+      "name": "echo-server",
+      "description": "Echo tool for testing",
+      "url": "http://echo-server:8001",
+      "transport": "http",
+      "tools": [
+        "echo"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "jira",
+      "description": "Jira issue tracking",
+      "url": "http://jira-server:8101",
+      "transport": "http",
+      "tools": [
+        "create_issue",
+        "search_issues",
+        "update_issue",
+        "get_issue",
+        "add_comment"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "testrail",
+      "description": "TestRail test management",
+      "url": "http://testrail-server:8102",
+      "transport": "http",
+      "tools": [
+        "get_test_cases",
+        "create_test_case",
+        "add_result",
+        "get_run",
+        "create_run"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "pytest-runner",
+      "description": "Run pytest suites",
+      "url": "http://pytest-server:8105",
+      "transport": "http",
+      "tools": [
+        "run_tests",
+        "run_suite",
+        "get_coverage"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "github",
+      "description": "GitHub repos and PRs",
+      "url": "http://github-server:8201",
+      "transport": "http",
+      "tools": [
+        "create_issue",
+        "list_prs",
+        "get_pr",
+        "merge_pr",
+        "create_branch",
+        "get_commits"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "git-local",
+      "description": "Local git operations",
+      "url": "http://git-server:8202",
+      "transport": "http",
+      "tools": [
+        "status",
+        "diff",
+        "commit",
+        "log",
+        "branch",
+        "checkout"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "azure-devops",
+      "description": "Azure DevOps work items and pipelines",
+      "url": "http://azure-server:8203",
+      "transport": "http",
+      "tools": [
+        "create_work_item",
+        "get_work_item",
+        "get_pipeline",
+        "run_pipeline",
+        "get_test_plan"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "code-runner",
+      "description": "Execute Python JS or shell",
+      "url": "http://code-runner:8204",
+      "transport": "http",
+      "tools": [
+        "run_python",
+        "run_shell",
+        "run_javascript"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "filesystem",
+      "description": "Read write search files",
+      "url": "http://filesystem-server:8301",
+      "transport": "http",
+      "tools": [
+        "read_file",
+        "write_file",
+        "search_files",
+        "list_dir",
+        "delete_file"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "rest-api-caller",
+      "description": "Call any external HTTP API",
+      "url": "http://rest-api-server:8303",
+      "transport": "http",
+      "tools": [
+        "get",
+        "post",
+        "put",
+        "patch",
+        "delete"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "slack",
+      "description": "Send messages to Slack",
+      "url": "http://slack-server:8305",
+      "transport": "http",
+      "tools": [
+        "send_message",
+        "list_channels",
+        "get_messages",
+        "create_channel"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "web-search",
+      "description": "Search the web in real time",
+      "url": "http://web-search-server:8306",
+      "transport": "http",
+      "tools": [
+        "search",
+        "fetch_page"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    }
+  ]
+}

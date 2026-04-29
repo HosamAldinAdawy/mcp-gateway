@@ -1,0 +1,73 @@
+name: Build Executables
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller pillow pystray
+      - name: Build .exe
+        run: pyinstaller mcp-gateway.spec
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/mcp-gateway.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller pillow pystray
+      - name: Build Mac binary
+        run: pyinstaller mcp-gateway.spec
+      - name: Zip for release
+        run: zip -r dist/mcp-gateway-mac.zip dist/mcp-gateway
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/mcp-gateway-mac.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller pillow pystray
+          sudo apt-get install -y python3-xlib
+      - name: Build Linux binary
+        run: pyinstaller mcp-gateway.spec
+      - name: Zip for release
+        run: zip -r dist/mcp-gateway-linux.zip dist/mcp-gateway
+      - name: Upload to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/mcp-gateway-linux.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

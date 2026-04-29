@@ -1,0 +1,368 @@
+{
+  "version": "1.0",
+  "description": "MCP Gateway Trust Store",
+  "servers": [
+    {
+      "name": "echo-server",
+      "description": "Echo tool for testing",
+      "url": "http://echo-server:8001",
+      "transport": "http",
+      "tools": [
+        "echo"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "jira",
+      "description": "Jira issue tracking",
+      "url": "http://jira-server:8101",
+      "transport": "http",
+      "tools": [
+        "create_issue",
+        "search_issues",
+        "update_issue",
+        "get_issue",
+        "add_comment"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "testrail",
+      "description": "TestRail test management",
+      "url": "http://testrail-server:8102",
+      "transport": "http",
+      "tools": [
+        "get_test_cases",
+        "create_test_case",
+        "add_result",
+        "get_run",
+        "create_run"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "pytest-runner",
+      "description": "Run pytest suites",
+      "url": "http://pytest-server:8105",
+      "transport": "http",
+      "tools": [
+        "run_tests",
+        "run_suite",
+        "get_coverage"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "github",
+      "description": "GitHub repos and PRs",
+      "url": "http://github-server:8201",
+      "transport": "http",
+      "tools": [
+        "create_issue",
+        "list_prs",
+        "get_pr",
+        "merge_pr",
+        "create_branch",
+        "get_commits"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "git-local",
+      "description": "Local git operations",
+      "url": "http://git-server:8202",
+      "transport": "http",
+      "tools": [
+        "status",
+        "diff",
+        "commit",
+        "log",
+        "branch",
+        "checkout"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "azure-devops",
+      "description": "Azure DevOps work items and pipelines",
+      "url": "http://azure-server:8203",
+      "transport": "http",
+      "tools": [
+        "create_work_item",
+        "get_work_item",
+        "get_pipeline",
+        "run_pipeline",
+        "get_test_plan"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "code-runner",
+      "description": "Execute Python JS or shell",
+      "url": "http://code-runner:8204",
+      "transport": "http",
+      "tools": [
+        "run_python",
+        "run_shell",
+        "run_javascript"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "filesystem",
+      "description": "Read write search files",
+      "url": "http://filesystem-server:8301",
+      "transport": "http",
+      "tools": [
+        "read_file",
+        "write_file",
+        "search_files",
+        "list_dir",
+        "delete_file"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "rest-api-caller",
+      "description": "Call any external HTTP API",
+      "url": "http://rest-api-server:8303",
+      "transport": "http",
+      "tools": [
+        "get",
+        "post",
+        "put",
+        "patch",
+        "delete"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "slack",
+      "description": "Send messages to Slack",
+      "url": "http://slack-server:8305",
+      "transport": "http",
+      "tools": [
+        "send_message",
+        "list_channels",
+        "get_messages",
+        "create_channel"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "web-search",
+      "description": "Search the web in real time",
+      "url": "http://web-search-server:8306",
+      "transport": "http",
+      "tools": [
+        "search",
+        "fetch_page"
+      ],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "xray",
+      "description": "Xray test management for Jira",
+      "url": "http://xray-server:8106",
+      "transport": "http",
+      "trusted": true,
+      "tools": [
+        "get_test",
+        "create_test",
+        "get_test_plan",
+        "create_test_execution",
+        "update_test_run",
+        "import_results"
+      ],
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "playwright",
+      "description": "Run Playwright browser tests",
+      "url": "http://playwright-server:8107",
+      "transport": "http",
+      "trusted": true,
+      "tools": [
+        "run_tests",
+        "run_test_file",
+        "run_test_by_name",
+        "get_last_report",
+        "screenshot_url",
+        "list_tests"
+      ],
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "allure",
+      "description": "Generate and read Allure test reports",
+      "url": "http://allure-server:8108",
+      "transport": "http",
+      "trusted": true,
+      "tools": [
+        "generate_report",
+        "get_summary",
+        "get_failures",
+        "get_flaky_tests",
+        "get_test_details",
+        "get_trends"
+      ],
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "confluence",
+      "description": "Confluence pages and spaces",
+      "url": "http://confluence-server:8205",
+      "transport": "http",
+      "trusted": true,
+      "tools": [
+        "get_page",
+        "search_pages",
+        "create_page",
+        "update_page",
+        "get_space",
+        "list_spaces",
+        "get_page_children"
+      ],
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "linear",
+      "description": "Linear issue tracker",
+      "url": "http://linear-server:8206",
+      "transport": "http",
+      "trusted": true,
+      "tools": [
+        "create_issue",
+        "search_issues",
+        "get_issue",
+        "update_issue",
+        "list_teams",
+        "list_projects",
+        "get_cycles",
+        "add_comment"
+      ],
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "gitlab",
+      "description": "GitLab issues, MRs, and pipelines",
+      "url": "http://gitlab-server:8207",
+      "transport": "http",
+      "trusted": true,
+      "tools": [
+        "create_issue",
+        "list_issues",
+        "get_issue",
+        "create_merge_request",
+        "list_merge_requests",
+        "get_pipeline",
+        "list_pipelines",
+        "trigger_pipeline",
+        "get_commits",
+        "add_comment"
+      ],
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "notion",
+      "description": "Notion pages and databases",
+      "url": "http://notion-server:8307",
+      "transport": "http",
+      "trusted": true,
+      "tools": [
+        "get_page",
+        "search",
+        "create_page",
+        "update_page",
+        "query_database",
+        "create_database_entry",
+        "get_block_children"
+      ],
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "asana",
+      "description": "Asana tasks and projects",
+      "url": "http://asana-server:8308",
+      "transport": "http",
+      "trusted": true,
+      "tools": [
+        "create_task",
+        "get_task",
+        "update_task",
+        "list_tasks",
+        "list_projects",
+        "add_comment",
+        "complete_task"
+      ],
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "google-sheets",
+      "description": "Read and write Google Sheets",
+      "url": "http://gsheets-server:8309",
+      "transport": "http",
+      "trusted": true,
+      "tools": [
+        "read_sheet",
+        "write_row",
+        "update_cell",
+        "append_rows",
+        "get_sheet_info",
+        "clear_range"
+      ],
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
+      "name": "figma",
+      "description": "Read Figma files and components",
+      "url": "http://figma-server:8310",
+      "transport": "http",
+      "trusted": true,
+      "tools": [
+        "get_file",
+        "get_file_nodes",
+        "get_comments",
+        "add_comment",
+        "get_components",
+        "list_projects",
+        "get_image_urls"
+      ],
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    }
+  ]
+}

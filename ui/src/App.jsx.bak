@@ -1,0 +1,519 @@
+import { useState, useEffect, useRef } from "react";
+
+const API_BASE = "http://localhost:8000";
+
+const COLORS = {
+  bg: "#0a0a0f",
+  surface: "#13131a",
+  border: "#1e1e2e",
+  borderHover: "#2e2e4e",
+  accent: "#6366f1",
+  accentGlow: "rgba(99,102,241,0.15)",
+  success: "#22c55e",
+  danger: "#ef4444",
+  warning: "#f59e0b",
+  text: "#e2e8f0",
+  textMuted: "#64748b",
+  textDim: "#334155",
+};
+
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: ${COLORS.bg};
+    color: ${COLORS.text};
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: ${COLORS.bg}; }
+  ::-webkit-scrollbar-thumb { background: ${COLORS.border}; border-radius: 2px; }
+
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes glow { 0%,100% { box-shadow: 0 0 20px rgba(99,102,241,0.1); } 50% { box-shadow: 0 0 40px rgba(99,102,241,0.3); } }
+
+  .fade-in { animation: fadeIn 0.3s ease forwards; }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px; border-radius: 8px; border: none;
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s; letter-spacing: 0.02em;
+  }
+  .btn-primary { background: ${COLORS.accent}; color: white; }
+  .btn-primary:hover { background: #7c3aed; transform: translateY(-1px); box-shadow: 0 4px 20px rgba(99,102,241,0.4); }
+  .btn-primary:disabled { background: ${COLORS.textDim}; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-ghost { background: transparent; color: ${COLORS.textMuted}; border: 1px solid ${COLORS.border}; }
+  .btn-ghost:hover { color: ${COLORS.text}; border-color: ${COLORS.borderHover}; background: rgba(255,255,255,0.03); }
+
+  .card {
+    background: ${COLORS.surface};
+    border: 1px solid ${COLORS.border};
+    border-radius: 12px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: ${COLORS.borderHover}; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 8px; border-radius: 100px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .badge-green { background: rgba(34,197,94,0.1); color: ${COLORS.success}; }
+  .badge-red { background: rgba(239,68,68,0.1); color: ${COLORS.danger}; }
+  .badge-blue { background: rgba(99,102,241,0.15); color: #818cf8; }
+  .badge-yellow { background: rgba(245,158,11,0.1); color: ${COLORS.warning}; }
+
+  .input {
+    background: ${COLORS.bg}; color: ${COLORS.text};
+    border: 1px solid ${COLORS.border}; border-radius: 8px;
+    padding: 9px 12px; font-size: 13px; outline: none; width: 100%;
+    font-family: 'JetBrains Mono', monospace;
+    transition: border-color 0.15s;
+  }
+  .input:focus { border-color: ${COLORS.accent}; box-shadow: 0 0 0 3px ${COLORS.accentGlow}; }
+  .input::placeholder { color: ${COLORS.textDim}; }
+
+  select.input { cursor: pointer; }
+
+  .tag {
+    display: inline-block; padding: 2px 8px; border-radius: 4px;
+    font-size: 11px; font-family: 'JetBrains Mono', monospace;
+    background: rgba(99,102,241,0.08); color: #a5b4fc;
+    border: 1px solid rgba(99,102,241,0.2); cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tag:hover { background: rgba(99,102,241,0.2); }
+  .tag.active { background: rgba(99,102,241,0.25); color: white; border-color: ${COLORS.accent}; }
+
+  .log-entry {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    padding: 8px 12px; border-radius: 6px; margin-bottom: 4px;
+    border-left: 2px solid transparent;
+    animation: fadeIn 0.2s ease;
+  }
+  .log-ok { border-left-color: ${COLORS.success}; background: rgba(34,197,94,0.04); }
+  .log-err { border-left-color: ${COLORS.danger}; background: rgba(239,68,68,0.04); }
+
+  .spinner { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.2); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; animation: pulse 2s infinite; }
+  .dot-green { background: ${COLORS.success}; }
+  .dot-red { background: ${COLORS.danger}; }
+  .dot-yellow { background: ${COLORS.warning}; }
+`;
+
+// ── Status Bar ────────────────────────────────────────────────────────────────
+function StatusBar({ apiKey, status }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderBottom: `1px solid ${COLORS.border}`, background: COLORS.surface }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>
+          MCP<span style={{ color: COLORS.accent }}>·</span>Gateway
+        </div>
+        <span className="badge badge-blue mono">v1.0.0</span>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        {status && (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: COLORS.textMuted }}>
+              <div className={`dot ${status.servers_healthy > 0 ? "dot-green" : "dot-red"}`} />
+              <span className="mono">{status.servers_healthy}/{status.servers_registered} servers</span>
+            </div>
+          </>
+        )}
+        {apiKey && (
+          <span className="mono" style={{ fontSize: 11, color: COLORS.textMuted, background: COLORS.bg, padding: "4px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}` }}>
+            {apiKey.slice(0, 8)}***
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Auth Screen ───────────────────────────────────────────────────────────────
+function AuthScreen({ onAuth }) {
+  const [key, setKey] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const submit = async () => {
+    if (!key.trim()) return;
+    setLoading(true); setError("");
+    try {
+      const r = await fetch(`${API_BASE}/v1/servers`, { headers: { "X-API-Key": key } });
+      if (r.ok) { onAuth(key); }
+      else { setError("Invalid API key. Check your .env MCP_API_KEYS."); }
+    } catch {
+      setError("Cannot reach gateway. Is it running? Run: make run");
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div className="card fade-in" style={{ width: "100%", maxWidth: 420, padding: 40 }}>
+        <div style={{ textAlign: "center", marginBottom: 32 }}>
+          <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 8 }}>
+            MCP<span style={{ color: COLORS.accent }}>·</span>Gateway
+          </div>
+          <div style={{ color: COLORS.textMuted, fontSize: 14 }}>Enter your API key to continue</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <input
+            className="input"
+            type="password"
+            placeholder="your-api-key-here"
+            value={key}
+            onChange={e => setKey(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && submit()}
+            autoFocus
+          />
+          {error && <div style={{ fontSize: 12, color: COLORS.danger, padding: "8px 12px", background: "rgba(239,68,68,0.08)", borderRadius: 6 }}>{error}</div>}
+          <button className="btn btn-primary" onClick={submit} disabled={loading || !key.trim()} style={{ width: "100%", justifyContent: "center", padding: "11px" }}>
+            {loading ? <div className="spinner" /> : "Connect"}
+          </button>
+        </div>
+        <div style={{ marginTop: 24, padding: "12px 16px", background: COLORS.bg, borderRadius: 8, fontSize: 12, color: COLORS.textMuted, fontFamily: "JetBrains Mono, monospace" }}>
+          <div style={{ marginBottom: 4, color: COLORS.textDim }}># Quick start</div>
+          <div>cp .env.example .env</div>
+          <div>make run</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Servers Panel ─────────────────────────────────────────────────────────────
+function ServersPanel({ servers, selected, onSelect }) {
+  const categories = {
+    qa: servers.filter(s => ["jira", "testrail", "pytest-runner", "xray", "zephyr", "allure-reporter", "bdd-generator"].includes(s.name)),
+    dev: servers.filter(s => ["github", "git-local", "azure-devops", "code-runner"].includes(s.name)),
+    general: servers.filter(s => !["jira", "testrail", "pytest-runner", "xray", "zephyr", "github", "git-local", "azure-devops", "code-runner"].includes(s.name)),
+  };
+
+  const catLabels = { qa: "QA Tools", dev: "Dev Tools", general: "General" };
+  const catColors = { qa: "#22c55e", dev: "#6366f1", general: "#f59e0b" };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {Object.entries(categories).map(([cat, list]) =>
+        list.length > 0 && (
+          <div key={cat}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: catColors[cat], letterSpacing: "0.1em", textTransform: "uppercase", padding: "8px 0 6px", fontFamily: "JetBrains Mono, monospace" }}>
+              {catLabels[cat]}
+            </div>
+            {list.map(s => (
+              <div key={s.name} onClick={() => onSelect(s)}
+                className="card"
+                style={{
+                  padding: "10px 14px", marginBottom: 4, cursor: "pointer",
+                  borderColor: selected?.name === s.name ? COLORS.accent : COLORS.border,
+                  background: selected?.name === s.name ? COLORS.accentGlow : COLORS.surface,
+                }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{s.name}</span>
+                  <span style={{ fontSize: 10, color: COLORS.textMuted, fontFamily: "JetBrains Mono, monospace" }}>{s.tools.length} tools</span>
+                </div>
+                <div style={{ fontSize: 11, color: COLORS.textMuted, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{s.description}</div>
+              </div>
+            ))}
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+// ── Tool Runner ───────────────────────────────────────────────────────────────
+function ToolRunner({ server, apiKey, onLog }) {
+  const [tool, setTool] = useState(server.tools[0] || "");
+  const [args, setArgs] = useState("{}");
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setTool(server.tools[0] || "");
+    setArgs("{}"); setResult(null); setError("");
+  }, [server]);
+
+  const run = async () => {
+    let parsed;
+    try { parsed = JSON.parse(args); } catch { setError("Invalid JSON in arguments"); return; }
+    setLoading(true); setError(""); setResult(null);
+    try {
+      const r = await fetch(`${API_BASE}/v1/call`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ server: server.name, tool, arguments: parsed }),
+      });
+      const data = await r.json();
+      setResult(data);
+      onLog({ ts: new Date().toISOString(), server: server.name, tool, success: data.success, error: data.error });
+    } catch (e) {
+      setError(e.message);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="card fade-in" style={{ padding: 24 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+        <div style={{ fontSize: 16, fontWeight: 700 }}>{server.name}</div>
+        <span className="badge badge-blue">{server.transport}</span>
+        <span style={{ fontSize: 11, color: COLORS.textMuted, fontFamily: "JetBrains Mono, monospace", marginLeft: "auto" }}>{server.url}</span>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.06em" }}>Tool</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {server.tools.map(t => (
+            <span key={t} className={`tag ${tool === t ? "active" : ""}`} onClick={() => setTool(t)}>{t}</span>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>Arguments (JSON)</div>
+        <textarea
+          className="input"
+          rows={4}
+          value={args}
+          onChange={e => setArgs(e.target.value)}
+          placeholder='{"key": "value"}'
+          style={{ resize: "vertical" }}
+        />
+      </div>
+
+      {error && <div style={{ fontSize: 12, color: COLORS.danger, padding: "8px 12px", background: "rgba(239,68,68,0.08)", borderRadius: 6, marginBottom: 12, fontFamily: "JetBrains Mono, monospace" }}>{error}</div>}
+
+      <button className="btn btn-primary" onClick={run} disabled={loading} style={{ marginBottom: result ? 16 : 0 }}>
+        {loading ? <><div className="spinner" /> Running...</> : "▶ Run Tool"}
+      </button>
+
+      {result && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span className={`badge ${result.success ? "badge-green" : "badge-red"}`}>{result.success ? "SUCCESS" : "ERROR"}</span>
+            <span style={{ fontSize: 11, color: COLORS.textMuted, fontFamily: "JetBrains Mono, monospace" }}>{server.name} / {tool}</span>
+          </div>
+          <pre style={{
+            background: COLORS.bg, border: `1px solid ${COLORS.border}`, borderRadius: 8,
+            padding: 16, fontSize: 11, fontFamily: "JetBrains Mono, monospace",
+            color: result.success ? COLORS.success : COLORS.danger,
+            overflowX: "auto", maxHeight: 300, whiteSpace: "pre-wrap", wordBreak: "break-all",
+          }}>
+            {JSON.stringify(result.success ? result.result : result.error, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Add Server Modal ──────────────────────────────────────────────────────────
+function AddServerModal({ apiKey, onClose, onAdded }) {
+  const [form, setForm] = useState({ name: "", description: "", url: "http://localhost:8001", tools: "", transport: "http" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const submit = async () => {
+    if (!form.name || !form.url || !form.tools) { setError("Name, URL, and tools are required"); return; }
+    setLoading(true);
+    try {
+      const r = await fetch(`${API_BASE}/v1/servers`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, tools: form.tools.split(",").map(t => t.trim()).filter(Boolean) }),
+      });
+      if (r.ok) { onAdded(); onClose(); }
+      else { const d = await r.json(); setError(d.detail || "Failed"); }
+    } catch (e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 24 }}>
+      <div className="card fade-in" style={{ width: "100%", maxWidth: 480, padding: 32 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+          <div style={{ fontSize: 16, fontWeight: 700 }}>Add Server to Registry</div>
+          <button className="btn btn-ghost" onClick={onClose} style={{ padding: "4px 10px" }}>✕</button>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {[
+            { key: "name", label: "Server name", placeholder: "my-tool" },
+            { key: "description", label: "Description", placeholder: "What does it do?" },
+            { key: "url", label: "URL", placeholder: "http://localhost:8001" },
+            { key: "tools", label: "Tools (comma separated)", placeholder: "tool1, tool2, tool3" },
+          ].map(f => (
+            <div key={f.key}>
+              <div style={{ fontSize: 11, color: COLORS.textMuted, marginBottom: 5, textTransform: "uppercase", letterSpacing: "0.06em" }}>{f.label}</div>
+              <input className="input" placeholder={f.placeholder} value={form[f.key]} onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))} />
+            </div>
+          ))}
+          {error && <div style={{ fontSize: 12, color: COLORS.danger, padding: "8px 12px", background: "rgba(239,68,68,0.08)", borderRadius: 6 }}>{error}</div>}
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button className="btn btn-ghost" onClick={onClose} style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
+            <button className="btn btn-primary" onClick={submit} disabled={loading} style={{ flex: 2, justifyContent: "center" }}>
+              {loading ? <div className="spinner" /> : "Add to Registry"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Logs Panel ────────────────────────────────────────────────────────────────
+function LogsPanel({ logs }) {
+  const ref = useRef(null);
+  useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight; }, [logs]);
+
+  return (
+    <div className="card" style={{ padding: 20, height: 280 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: COLORS.textMuted, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 12 }}>
+        Audit Log <span style={{ color: COLORS.textDim, fontWeight: 400 }}>— live</span>
+      </div>
+      <div ref={ref} style={{ height: 220, overflowY: "auto" }}>
+        {logs.length === 0 && (
+          <div style={{ color: COLORS.textDim, fontSize: 12, fontFamily: "JetBrains Mono, monospace", padding: "20px 0" }}>
+            No calls yet — run a tool to see logs here.
+          </div>
+        )}
+        {logs.map((l, i) => (
+          <div key={i} className={`log-entry ${l.success ? "log-ok" : "log-err"}`}>
+            <span style={{ color: COLORS.textMuted }}>{new Date(l.ts).toLocaleTimeString()} </span>
+            <span style={{ color: l.success ? COLORS.success : COLORS.danger }}>{l.success ? "OK" : "ERR"} </span>
+            <span style={{ color: COLORS.text }}>{l.server}</span>
+            <span style={{ color: COLORS.textMuted }}>/</span>
+            <span style={{ color: "#a5b4fc" }}>{l.tool}</span>
+            {l.error && <span style={{ color: COLORS.danger }}> — {l.error}</span>}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Main App ──────────────────────────────────────────────────────────────────
+export default function App() {
+  const [apiKey, setApiKey] = useState(localStorage.getItem("mcp_key") || "");
+  const [authed, setAuthed] = useState(false);
+  const [servers, setServers] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [logs, setLogs] = useState([]);
+  const [showAdd, setShowAdd] = useState(false);
+
+  const addLog = (entry) => setLogs(prev => [...prev.slice(-100), entry]);
+
+  const auth = (key) => {
+    setApiKey(key);
+    localStorage.setItem("mcp_key", key);
+    setAuthed(true);
+  };
+
+  const loadServers = async () => {
+    try {
+      const r = await fetch(`${API_BASE}/v1/servers`, { headers: { "X-API-Key": apiKey } });
+      if (r.ok) { const d = await r.json(); setServers(d); if (!selected && d.length > 0) setSelected(d[0]); }
+    } catch {}
+  };
+
+  const loadStatus = async () => {
+    try {
+      const r = await fetch(`${API_BASE}/status`);
+      if (r.ok) setStatus(await r.json());
+    } catch {}
+  };
+
+  useEffect(() => {
+    if (authed) { loadServers(); loadStatus(); }
+  }, [authed]);
+
+  // Auto-auth if key saved
+  useEffect(() => {
+    if (apiKey) {
+      fetch(`${API_BASE}/v1/servers`, { headers: { "X-API-Key": apiKey } })
+        .then(r => { if (r.ok) setAuthed(true); })
+        .catch(() => {});
+    }
+  }, []);
+
+  if (!authed) return (
+    <>
+      <style>{css}</style>
+      <AuthScreen onAuth={auth} />
+    </>
+  );
+
+  return (
+    <>
+      <style>{css}</style>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+        <StatusBar apiKey={apiKey} status={status} />
+
+        <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", flex: 1, gap: 0 }}>
+
+          {/* Sidebar */}
+          <div style={{ borderRight: `1px solid ${COLORS.border}`, padding: 16, overflowY: "auto", height: "calc(100vh - 53px)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: COLORS.textMuted, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                Servers ({servers.length})
+              </div>
+              <button className="btn btn-ghost" onClick={() => setShowAdd(true)} style={{ padding: "3px 8px", fontSize: 11 }}>+ Add</button>
+            </div>
+            <ServersPanel servers={servers} selected={selected} onSelect={setSelected} />
+          </div>
+
+          {/* Main Content */}
+          <div style={{ padding: 24, overflowY: "auto", height: "calc(100vh - 53px)", display: "flex", flexDirection: "column", gap: 20 }}>
+
+            {/* Stats */}
+            {status && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+                {[
+                  { label: "Servers", value: status.servers_registered, color: COLORS.accent },
+                  { label: "Healthy", value: status.servers_healthy, color: COLORS.success },
+                  { label: "Calls Today", value: logs.length, color: COLORS.warning },
+                ].map(s => (
+                  <div key={s.label} className="card" style={{ padding: "16px 20px" }}>
+                    <div style={{ fontSize: 28, fontWeight: 800, color: s.color, letterSpacing: "-0.02em" }}>{s.value}</div>
+                    <div style={{ fontSize: 12, color: COLORS.textMuted, marginTop: 2 }}>{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Tool Runner */}
+            {selected ? (
+              <ToolRunner server={selected} apiKey={apiKey} onLog={addLog} />
+            ) : (
+              <div className="card fade-in" style={{ padding: 40, textAlign: "center", color: COLORS.textMuted }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>←</div>
+                <div style={{ fontSize: 14 }}>Select a server to start calling tools</div>
+              </div>
+            )}
+
+            {/* Logs */}
+            <LogsPanel logs={logs} />
+          </div>
+        </div>
+      </div>
+
+      {showAdd && <AddServerModal apiKey={apiKey} onClose={() => setShowAdd(false)} onAdded={loadServers} />}
+    </>
+  );
+}
