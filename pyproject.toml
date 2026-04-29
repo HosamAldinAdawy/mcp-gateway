@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcp-gateway"
+version = "1.0.0"
+description = "Secure remote MCP gateway — auth, audit, registry, and SSE transport in one command"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+keywords = ["mcp", "llm", "gateway", "claude", "security", "ai-tools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+dependencies = [
+    "fastapi==0.115.0",
+    "uvicorn[standard]==0.30.0",
+    "httpx==0.27.0",
+    "pydantic==2.8.0",
+    "python-dotenv==1.0.1",
+    "sse-starlette==2.1.3",
+    "anyio==4.4.0",
+    "aiofiles==23.2.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/HosamAldinAdawy/mcp-gateway"
+Documentation = "https://github.com/HosamAldinAdawy/mcp-gateway#readme"
+Issues = "https://github.com/HosamAldinAdawy/mcp-gateway/issues"
+
+[project.scripts]
+mcp-gateway = "mcp_gateway.cli_entry:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"mcp_gateway" = [
+    "*.json",
+    "*.html",
+    "*.md",
+    "*.env.example",
+    "templates/**/*.py",
+    "security/policy.json",
+    "registry/registry.json",
+    "scripts/*.sh",
+    "infra/*",
+]
