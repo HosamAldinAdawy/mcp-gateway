@@ -1,0 +1,42 @@
+name: Build & Release EXE
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller pillow
+
+      - name: Build EXE
+        run: pyinstaller mcp-gateway.spec
+
+      - name: Upload EXE to Release
+        uses: softprops/action-gh-release@v2
+        if: github.event_name == 'release'
+        with:
+          files: dist/mcp-gateway.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload EXE as Artifact (manual run)
+        uses: actions/upload-artifact@v4
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          name: mcp-gateway-windows
+          path: dist/mcp-gateway.exe
