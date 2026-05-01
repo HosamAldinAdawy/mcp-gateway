@@ -11,6 +11,10 @@ a = Analysis(
         ('security/policy.json',   'security'),
         ('.env.example',           '.'),
         ('templates',              'templates'),
+        ('gateway',  'gateway'),
+        ('registry', 'registry'),
+        ('security', 'security'),
+        ('ui',       'ui'),
     ],
     hiddenimports=[
         'uvicorn', 'uvicorn.logging', 'uvicorn.loops', 'uvicorn.loops.auto',
