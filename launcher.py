@@ -14,12 +14,14 @@ from pathlib import Path
 
 # ── Fix paths when running as PyInstaller bundle ─────────────────────────────
 if getattr(sys, "frozen", False):
-    BASE_DIR = Path(sys.executable).parent
+    BUNDLE_DIR = Path(sys._MEIPASS)
+    BASE_DIR   = Path(sys.executable).parent
 else:
-    BASE_DIR = Path(__file__).parent
+    BUNDLE_DIR = Path(__file__).parent
+    BASE_DIR   = Path(__file__).parent
 
-os.chdir(BASE_DIR)
-sys.path.insert(0, str(BASE_DIR))
+os.chdir(BUNDLE_DIR)
+sys.path.insert(0, str(BUNDLE_DIR))
 
 # ── Always create .env if missing — no .env.example needed ───────────────────
 env_file = BASE_DIR / ".env"
