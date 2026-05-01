@@ -23,16 +23,14 @@ else:
 os.chdir(BUNDLE_DIR)
 sys.path.insert(0, str(BUNDLE_DIR))
 
-# ── Always create .env if missing — no .env.example needed ───────────────────
+# ── Always create .env if missing ────────────────────────────────────────────
 env_file = BASE_DIR / ".env"
 
 if not env_file.exists():
-    # Try copy from .env.example first
-    env_example = BASE_DIR / ".env.example"
+    env_example = BUNDLE_DIR / ".env.example"
     if env_example.exists():
         shutil.copy(env_example, env_file)
     else:
-        # Create minimal .env from scratch
         new_key = secrets.token_hex(24)
         env_file.write_text(
             f"# MCP Gateway — auto-generated\n"
@@ -67,17 +65,21 @@ def make_icon():
         except Exception:
             return None
 
-# ── Start uvicorn in background thread ───────────────────────────────────────
+# ── Start uvicorn in MAIN thread (no daemon) ─────────────────────────────────
 def run_server():
-    import uvicorn
-    uvicorn.run(
-        "gateway.main:app",
-        host="0.0.0.0",
-        port=8000,
-        log_level="error",
-    )
-
-threading.Thread(target=run_server, daemon=True).start()
+    try:
+        import uvicorn
+        uvicorn.run(
+            "gateway.main:app",
+            host="0.0.0.0",
+            port=8000,
+            log_level="info",
+        )
+    except Exception as e:
+        print(f"[ERROR] Server failed: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        input("Press Enter to exit...")
 
 # ── Open browser once server is up ───────────────────────────────────────────
 def open_browser():
@@ -86,36 +88,36 @@ def open_browser():
 
 threading.Thread(target=open_browser, daemon=True).start()
 
-# ── System tray ──────────────────────────────────────────────────────────────
-try:
-    import pystray
-
-    icon_img = make_icon()
-
-    def on_open(icon, item):
-        webbrowser.open("http://localhost:8000")
-
-    def on_quit(icon, item):
-        icon.stop()
-        os._exit(0)
-
-    menu = pystray.Menu(
-        pystray.MenuItem("Open MCP Gateway", on_open, default=True),
-        pystray.Menu.SEPARATOR,
-        pystray.MenuItem("Quit", on_quit),
-    )
-
-    icon = pystray.Icon(
-        name="MCP Gateway",
-        icon=icon_img if icon_img else make_icon(),
-        title="MCP Gateway — running on :8000",
-        menu=menu,
-    )
-    icon.run()
-
-except Exception:
+# ── System tray in background ────────────────────────────────────────────────
+def run_tray():
     try:
-        while True:
-            time.sleep(60)
-    except KeyboardInterrupt:
-        pass
+        import pystray
+        icon_img = make_icon()
+
+        def on_open(icon, item):
+            webbrowser.open("http://localhost:8000")
+
+        def on_quit(icon, item):
+            icon.stop()
+            os._exit(0)
+
+        menu = pystray.Menu(
+            pystray.MenuItem("Open MCP Gateway", on_open, default=True),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem("Quit", on_quit),
+        )
+
+        icon = pystray.Icon(
+            name="MCP Gateway",
+            icon=icon_img if icon_img else make_icon(),
+            title="MCP Gateway — running on :8000",
+            menu=menu,
+        )
+        icon.run()
+    except Exception as e:
+        print(f"[WARN] Tray failed: {e}", flush=True)
+
+threading.Thread(target=run_tray, daemon=True).start()
+
+# ── Run server in main thread ─────────────────────────────────────────────────
+run_server()
