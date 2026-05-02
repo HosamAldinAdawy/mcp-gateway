@@ -6,8 +6,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-
-load_dotenv()
+import sys
+if getattr(sys, "frozen", False):
+    load_dotenv(Path(sys.executable).parent / ".env")
+else:
+    load_dotenv()
 
 from gateway.models import GatewayStatus
 from gateway.router import router
