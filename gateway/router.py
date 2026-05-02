@@ -77,8 +77,8 @@ async def add_server_api(
         return server
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    @router.get("/auto-key")
-    async def auto_key():
+@router.get("/auto-key")
+async def auto_key():
     import os
     keys = os.getenv("MCP_API_KEYS", "")
     first_key = keys.split(",")[0].strip()
