@@ -61,6 +61,16 @@
       "added_at": "2025-01-01T00:00:00Z"
     },
     {
+      "name": "selenium",
+      "description": "Browser automation with Selenium",
+      "url": "http://selenium-server:8110",
+      "transport": "http",
+      "tools": ["navigate","click","type","get_text","screenshot","execute_script","find_elements","get_page_source","back","refresh","close"],
+      "trusted": true,
+      "added_by": "default",
+      "added_at": "2025-01-01T00:00:00Z"
+    },
+    {
       "name": "github",
       "description": "GitHub repos and PRs",
       "url": "http://github-server:8201",
