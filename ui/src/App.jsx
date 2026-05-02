@@ -725,10 +725,7 @@ export default function App() {
         setAuthed(true);
       }
     }).catch(() => {});
-}, []);
   }, []);
-
-  const [authed, setAuthed]   = useState(false);
 
   return (
     <>
