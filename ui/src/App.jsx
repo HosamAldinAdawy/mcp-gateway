@@ -682,7 +682,7 @@ function LogsPanel({ logs }) {
 
 // ── Main App ───────────────────────────────────────────────────────────────────
 export default function App() {
-  const [apiKey, setApiKey]   = useState(localStorage.getItem("mcp_key") || "");
+  const [apiKey, setApiKey]   = useState("");
   const [authed, setAuthed]   = useState(false);
   const [servers, setServers] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -715,7 +715,7 @@ export default function App() {
     }
   }, []);
 
-  if (!authed) return (<><style>{css}</style><AuthScreen onAuth={auth} /></>);
+  const [authed, setAuthed]   = useState(false);
 
   return (
     <>
