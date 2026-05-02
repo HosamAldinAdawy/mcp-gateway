@@ -709,10 +709,23 @@ export default function App() {
   useEffect(() => { if (authed) { loadServers(); loadStatus(); } }, [authed]);
 
   useEffect(() => {
-    if (apiKey) {
-      fetch(`${API_BASE}/v1/servers`, { headers: { "X-API-Key": apiKey } })
-        .then(r => { if (r.ok) setAuthed(true); }).catch(() => {});
-    }
+  const stored = localStorage.getItem("mcp_key");
+  if (stored) {
+    setApiKey(stored);
+    fetch(`${API_BASE}/v1/servers`, { headers: { "X-API-Key": stored } })
+      .then(r => { if (r.ok) setAuthed(true); }).catch(() => {});
+    return;
+  }
+  fetch(`${API_BASE}/v1/auto-key`)
+    .then(r => r.json())
+    .then(d => {
+      if (d.key) {
+        setApiKey(d.key);
+        localStorage.setItem("mcp_key", d.key);
+        setAuthed(true);
+      }
+    }).catch(() => {});
+}, []);
   }, []);
 
   const [authed, setAuthed]   = useState(false);
