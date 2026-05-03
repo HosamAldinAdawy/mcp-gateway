@@ -1,4 +1,6 @@
 import os
+import sys
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 from dotenv import load_dotenv
@@ -6,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-import sys
+
 if getattr(sys, "frozen", False):
     load_dotenv(Path(sys.executable).parent / ".env")
 else:
@@ -24,6 +26,13 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Start embedded MCP servers based on .env credentials
+    try:
+        from gateway.server_manager import start_all
+        threading.Thread(target=start_all, daemon=True).start()
+    except Exception as e:
+        print(f"[server_manager] warning: {e}")
+
     servers = get_all_servers()
     print(f"\n MCP Gateway v{VERSION}")
     print(f" Servers registered: {len(servers)}")
