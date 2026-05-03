@@ -183,8 +183,358 @@ const TEMPLATES = {
 const CAT_COLORS = { qa: COLORS.success, dev: COLORS.accent, general: COLORS.warning };
 const CAT_LABELS  = { qa: "QA Tools", dev: "Dev Tools", general: "General" };
 
+// ── Translations ──────────────────────────────────────────────────────────────
+const T = {
+  en: {
+    appName: "MCP·Gateway",
+    chooseLanguage: "Choose your language",
+    chooseStart: "Choose how to get started",
+    haveKey: "I have an API key",
+    generateKey: "Generate a new key",
+    apiKey: "API Key",
+    keyHint: "Your key is stored in",
+    keyHintUnder: "under",
+    keyHintSwitch: "Don't have one yet? Switch to \"Generate a new key\" above",
+    connect: "Connect →",
+    invalidKey: "Invalid API key — make sure it matches MCP_API_KEYS in your .env",
+    cantReach: "Cannot reach gateway — is it running? Try: make run",
+    generateSecure: "Generate a secure key",
+    generateSub: "A random key is generated for you — no need to type one",
+    generateBtn: "Generate key",
+    addToEnv: "Add it to your",
+    addToEnvSub: "Open the file and add this line",
+    envLocation: "The .env file is in your gateway root folder",
+    restart: "Restart the gateway",
+    onceDone: "Once done — enter your key below to connect",
+    keyProtects: "The API key protects your gateway — without it, no one can call your tools",
+    chooseTemplate: "Choose a template",
+    credentials: "credentials",
+    generateConfig: "Connect & Generate config ↓",
+    connecting: "Connecting...",
+    selectTemplate: "Select a template to get started",
+    cursor: "Cursor",
+    claudeDesktop: "Claude Desktop",
+    copied: "Copied ✓",
+    copy: "Copy",
+    availableTools: "Available tools",
+    cursorHint: "Add it to .cursor/mcp.json in your project folder",
+    claudeHint: "Add it to ~/Library/Application Support/Claude/claude_desktop_config.json",
+    serverStarted: "server started — ready",
+    serverFailed: "Failed to start server",
+    cantReachGw: "Cannot reach gateway — is it running?",
+    totalCalls: "Total calls",
+    successful: "Successful",
+    failed: "Failed",
+    filterPlaceholder: "Filter by server, tool, or key...",
+    refresh: "↻ Refresh",
+    auditLog: "Audit Log",
+    loading: "loading...",
+    noLogs: "No log entries yet — run a tool to see logs here.",
+    customServer: "Custom MCP Server",
+    customDesc: "Register any MCP server and optionally start it automatically.",
+    serverName: "Server name",
+    description: "Description",
+    serverUrl: "Server URL",
+    toolsLabel: "Tools (comma-separated)",
+    transport: "Transport",
+    startCommand: "Start command",
+    startCommandNote: "(optional — auto-starts server)",
+    addRegistry: "Add to Registry →",
+    addStart: "Add & Start Server →",
+    adding: "Adding...",
+    starting: "Starting...",
+    howItWorks: "How it works",
+    serverAdded: "added to registry ✓",
+    serverAddedStarted: "added and started ✓",
+    quickSetup: "Quick Setup",
+    dashboard: "Dashboard",
+    logs: "Logs",
+    customTab: "Custom Server",
+    servers: "Servers",
+    healthy: "Healthy",
+    callsToday: "Calls Today",
+    addServer: "+ Add",
+    selectServer: "Select a server to start calling tools",
+    tool: "Tool",
+    argumentsJson: "Arguments (JSON)",
+    running: "Running...",
+    runTool: "▶ Run Tool",
+    addToRegistryModal: "Add Server to Registry",
+    cancel: "Cancel",
+    nameUrlRequired: "Name, URL, and tools are required",
+  },
+  ar: {
+    appName: "MCP·Gateway",
+    chooseLanguage: "اختار لغتك",
+    chooseStart: "ابدأ من هنا",
+    haveKey: "عندي API key",
+    generateKey: "ولّد key جديد",
+    apiKey: "API Key",
+    keyHint: "الـ key موجود في ملف",
+    keyHintUnder: "في السطر",
+    keyHintSwitch: "مش عندك key؟ اختار \"ولّد key جديد\" فوق",
+    connect: "اتصال →",
+    invalidKey: "الـ key غلط — تأكد إنه موجود في MCP_API_KEYS في الـ .env",
+    cantReach: "مش قادر يوصل للـ gateway — شغّله أولاً",
+    generateSecure: "ولّد key آمن",
+    generateSub: "بيتولد تلقائي — مش محتاج تكتبه",
+    generateBtn: "ولّد key",
+    addToEnv: "حطه في ملف",
+    addToEnvSub: "افتح الملف وضيف السطر ده",
+    envLocation: "الملف موجود في فولدر الـ gateway",
+    restart: "أعد تشغيل الـ gateway",
+    onceDone: "بعد ما تخلص — حط الـ key هنا",
+    keyProtects: "الـ key بيحمي الـ gateway — من غيره محدش يقدر يوصل",
+    chooseTemplate: "اختار template",
+    credentials: "بيانات الدخول",
+    generateConfig: "اتصال وولّد الـ config ↓",
+    connecting: "جاري الاتصال...",
+    selectTemplate: "اختار template للبدء",
+    cursor: "Cursor",
+    claudeDesktop: "Claude Desktop",
+    copied: "تم النسخ ✓",
+    copy: "نسخ",
+    availableTools: "الأدوات المتاحة",
+    cursorHint: "حطه في .cursor/mcp.json في فولدر المشروع",
+    claudeHint: "حطه في ~/Library/Application Support/Claude/claude_desktop_config.json",
+    serverStarted: "server شغال — جاهز",
+    serverFailed: "فشل تشغيل الـ server",
+    cantReachGw: "مش قادر يوصل للـ gateway",
+    totalCalls: "إجمالي الطلبات",
+    successful: "ناجح",
+    failed: "فاشل",
+    filterPlaceholder: "فلتر بالـ server أو الـ tool أو الـ key...",
+    refresh: "↻ تحديث",
+    auditLog: "سجل العمليات",
+    loading: "جاري التحميل...",
+    noLogs: "مفيش سجلات لسه — شغّل أي tool",
+    customServer: "سيرفر مخصص",
+    customDesc: "سجّل أي MCP server وشغّله تلقائي.",
+    serverName: "اسم الـ server",
+    description: "وصف",
+    serverUrl: "رابط الـ server",
+    toolsLabel: "الأدوات (مفصولة بفواصل)",
+    transport: "نوع الاتصال",
+    startCommand: "أمر التشغيل",
+    startCommandNote: "(اختياري — يشغّل تلقائي)",
+    addRegistry: "إضافة للـ Registry →",
+    addStart: "إضافة وتشغيل →",
+    adding: "جاري الإضافة...",
+    starting: "جاري التشغيل...",
+    howItWorks: "كيف يعمل",
+    serverAdded: "أُضيف للـ registry ✓",
+    serverAddedStarted: "أُضيف وشغّل ✓",
+    quickSetup: "إعداد سريع",
+    dashboard: "لوحة التحكم",
+    logs: "السجلات",
+    customTab: "سيرفر مخصص",
+    servers: "السيرفرات",
+    healthy: "يعمل",
+    callsToday: "طلبات اليوم",
+    addServer: "+ إضافة",
+    selectServer: "اختار server لتشغيل الأدوات",
+    tool: "الأداة",
+    argumentsJson: "المعاملات (JSON)",
+    running: "جاري التشغيل...",
+    runTool: "▶ تشغيل",
+    addToRegistryModal: "إضافة server للـ Registry",
+    cancel: "إلغاء",
+    nameUrlRequired: "الاسم والـ URL والأدوات مطلوبة",
+  },
+  fr: {
+    appName: "MCP·Gateway",
+    chooseLanguage: "Choisissez votre langue",
+    chooseStart: "Choisissez comment démarrer",
+    haveKey: "J'ai une clé API",
+    generateKey: "Générer une nouvelle clé",
+    apiKey: "Clé API",
+    keyHint: "Votre clé est dans le fichier",
+    keyHintUnder: "sous la ligne",
+    keyHintSwitch: "Pas de clé ? Passez à \"Générer une nouvelle clé\" ci-dessus",
+    connect: "Connecter →",
+    invalidKey: "Clé API invalide — vérifiez MCP_API_KEYS dans votre .env",
+    cantReach: "Impossible d'atteindre le gateway — est-il en cours d'exécution ?",
+    generateSecure: "Générer une clé sécurisée",
+    generateSub: "Une clé aléatoire est générée pour vous",
+    generateBtn: "Générer la clé",
+    addToEnv: "Ajoutez-la à votre",
+    addToEnvSub: "Ouvrez le fichier et ajoutez cette ligne",
+    envLocation: "Le fichier .env est dans le dossier racine du gateway",
+    restart: "Redémarrer le gateway",
+    onceDone: "Une fois terminé — entrez votre clé ci-dessous",
+    keyProtects: "La clé API protège votre gateway — sans elle, personne ne peut accéder à vos outils",
+    chooseTemplate: "Choisir un template",
+    credentials: "identifiants",
+    generateConfig: "Connecter & Générer la config ↓",
+    connecting: "Connexion...",
+    selectTemplate: "Sélectionnez un template pour commencer",
+    cursor: "Cursor",
+    claudeDesktop: "Claude Desktop",
+    copied: "Copié ✓",
+    copy: "Copier",
+    availableTools: "Outils disponibles",
+    cursorHint: "Ajoutez-le dans .cursor/mcp.json dans votre dossier de projet",
+    claudeHint: "Ajoutez-le dans ~/Library/Application Support/Claude/claude_desktop_config.json",
+    serverStarted: "server démarré — prêt",
+    serverFailed: "Échec du démarrage du server",
+    cantReachGw: "Impossible d'atteindre le gateway",
+    totalCalls: "Total des appels",
+    successful: "Réussis",
+    failed: "Échoués",
+    filterPlaceholder: "Filtrer par server, outil ou clé...",
+    refresh: "↻ Actualiser",
+    auditLog: "Journal d'audit",
+    loading: "chargement...",
+    noLogs: "Aucune entrée — exécutez un outil pour voir les logs.",
+    customServer: "Serveur personnalisé",
+    customDesc: "Enregistrez n'importe quel serveur MCP et démarrez-le automatiquement.",
+    serverName: "Nom du serveur",
+    description: "Description",
+    serverUrl: "URL du serveur",
+    toolsLabel: "Outils (séparés par des virgules)",
+    transport: "Transport",
+    startCommand: "Commande de démarrage",
+    startCommandNote: "(optionnel — démarre automatiquement)",
+    addRegistry: "Ajouter au Registry →",
+    addStart: "Ajouter & Démarrer →",
+    adding: "Ajout...",
+    starting: "Démarrage...",
+    howItWorks: "Comment ça marche",
+    serverAdded: "ajouté au registry ✓",
+    serverAddedStarted: "ajouté et démarré ✓",
+    quickSetup: "Configuration rapide",
+    dashboard: "Tableau de bord",
+    logs: "Journaux",
+    customTab: "Serveur personnalisé",
+    servers: "Serveurs",
+    healthy: "En ligne",
+    callsToday: "Appels aujourd'hui",
+    addServer: "+ Ajouter",
+    selectServer: "Sélectionnez un serveur pour utiliser les outils",
+    tool: "Outil",
+    argumentsJson: "Arguments (JSON)",
+    running: "En cours...",
+    runTool: "▶ Exécuter",
+    addToRegistryModal: "Ajouter un serveur au Registry",
+    cancel: "Annuler",
+    nameUrlRequired: "Nom, URL et outils sont requis",
+  },
+};
+
+// ── Splash / Loading Screen ────────────────────────────────────────────────────
+function SplashScreen({ onDone }) {
+  useEffect(() => {
+    const total = 4200;
+    const t = setTimeout(onDone, total);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <div style={{ minHeight:"100vh", background:COLORS.bg, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:20 }}>
+      <div id="splash-stage" style={{ position:"relative", width:200, height:160, display:"flex", alignItems:"center", justifyContent:"center" }}>
+        <svg id="svgB" width="200" height="160" viewBox="0 0 200 160" style={{ position:"absolute", top:0, left:0, opacity:0, transition:"opacity .5s, transform .6s" }}>
+          <rect x="76" y="24" width="16" height="112" rx="3" fill="none" stroke="#6366f1" strokeWidth="2.5"/>
+          <rect x="108" y="24" width="16" height="112" rx="3" fill="none" stroke="#6366f1" strokeWidth="2.5"/>
+          {[[56,48,.4],[56,80,1],[56,112,.4],[144,48,.4],[144,80,1],[144,112,.4]].map(([x,y,o],i)=>(
+            <line key={i} x1={i<3?76:124} y1={y} x2={x} y2={y} stroke="#6366f1" strokeWidth="2" strokeLinecap="round" opacity={o}/>
+          ))}
+          <circle cx="100" cy="80" r="5" fill="#6366f1"/>
+        </svg>
+
+        <svg id="svgC" width="200" height="160" viewBox="0 0 200 160" style={{ position:"absolute", top:0, left:0, opacity:0, transition:"opacity .5s, transform .6s" }}>
+          <path d="M80 20 L60 20 L60 140 L80 140" fill="none" stroke="#6366f1" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M120 20 L140 20 L140 140 L120 140" fill="none" stroke="#6366f1" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="100" cy="80" r="6" fill="#6366f1"/>
+          <circle cx="100" cy="80" r="14" fill="none" stroke="#6366f1" strokeWidth="1.5" opacity=".4"/>
+        </svg>
+
+        <svg id="svgA" width="200" height="160" viewBox="0 0 200 160" style={{ position:"absolute", top:0, left:0, opacity:0, transition:"opacity .5s, transform .7s cubic-bezier(.34,1.56,.64,1)" }}>
+          <path d="M100 10 L148 28 L148 76 C148 110 124 136 100 148 C76 136 52 110 52 76 L52 28 Z" fill="#6366f1" opacity=".1" stroke="#6366f1" strokeWidth="2.5" strokeLinejoin="round"/>
+          <line x1="100" y1="60" x2="100" y2="100" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round"/>
+          <line x1="80" y1="80" x2="120" y2="80" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round"/>
+          <circle cx="100" cy="80" r="5" fill="#6366f1"/>
+        </svg>
+      </div>
+
+      <div id="splash-name" style={{ fontFamily:"'JetBrains Mono',monospace", fontSize:20, fontWeight:800, color:COLORS.text, letterSpacing:"-.02em", opacity:0, transition:"opacity .6s" }}>
+        MCP<span style={{color:COLORS.accent}}>·</span>Gateway
+      </div>
+      <div id="splash-slogan" style={{ fontSize:10, color:COLORS.textDim, letterSpacing:".14em", textTransform:"uppercase", opacity:0, transition:"opacity .6s" }}>
+        Control Your MCP
+      </div>
+
+      <SplashAnimator />
+    </div>
+  );
+}
+
+function SplashAnimator() {
+  useEffect(() => {
+    const wait = (ms) => new Promise(r => setTimeout(r, ms));
+    const show = (id, extra={}) => {
+      const el = document.getElementById(id);
+      if (el) Object.assign(el.style, { opacity:"1", ...extra });
+    };
+    const hide = (id, extra={}) => {
+      const el = document.getElementById(id);
+      if (el) Object.assign(el.style, { opacity:"0", ...extra });
+    };
+
+    (async () => {
+      await wait(200);
+      show("svgB");
+      await wait(900);
+      show("svgC");
+      await wait(900);
+      show("svgA");
+      await wait(900);
+      hide("svgB", { transform:"scale(.6)" });
+      hide("svgC", { transform:"scale(.6)" });
+      show("svgA", { transform:"scale(1.15)" });
+      await wait(400);
+      const a = document.getElementById("svgA");
+      if (a) a.style.transform = "scale(1)";
+      await wait(400);
+      show("splash-name");
+      await wait(300);
+      show("splash-slogan");
+    })();
+  }, []);
+  return null;
+}
+
+// ── Language Selector Screen ───────────────────────────────────────────────────
+function LanguageScreen({ onSelect }) {
+  const langs = [
+    { code: "en", label: "English",  flag: "🇬🇧" },
+    { code: "ar", label: "العربية",  flag: "🇪🇬", rtl: true },
+    { code: "fr", label: "Français", flag: "🇫🇷" },
+  ];
+  return (
+    <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:24, background:COLORS.bg }}>
+      <div className="card fade-in" style={{ width:"100%", maxWidth:360, padding:40, textAlign:"center" }}>
+        <div style={{ fontSize:28, fontWeight:800, letterSpacing:"-0.02em", marginBottom:8 }}>
+          MCP<span style={{color:COLORS.accent}}>·</span>Gateway
+        </div>
+        <div style={{ fontSize:14, color:COLORS.textMuted, marginBottom:32 }}>Choose your language / اختار لغتك / Choisissez votre langue</div>
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {langs.map(l => (
+            <button key={l.code} className="btn btn-ghost" onClick={() => onSelect(l.code)}
+              style={{ width:"100%", justifyContent:"center", padding:"12px", fontSize:15, gap:12,
+                direction: l.rtl ? "rtl" : "ltr" }}>
+              <span style={{fontSize:20}}>{l.flag}</span>
+              {l.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // ── Status Bar ─────────────────────────────────────────────────────────────────
-function StatusBar({ apiKey, status }) {
+function StatusBar({ apiKey, status, onChangeLang }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderBottom: `1px solid ${COLORS.border}`, background: COLORS.surface }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -211,7 +561,7 @@ function StatusBar({ apiKey, status }) {
 }
 
 // ── Auth Screen ────────────────────────────────────────────────────────────────
-function AuthScreen({ onAuth }) {
+function AuthScreen({ onAuth, t = T.en }) {
   const [mode, setMode]           = useState("have");
   const [key, setKey]             = useState("");
   const [generated, setGenerated] = useState("");
@@ -236,8 +586,8 @@ function AuthScreen({ onAuth }) {
     try {
       const r = await fetch(`${API_BASE}/v1/servers`, { headers: { "X-API-Key": key } });
       if (r.ok) { onAuth(key); }
-      else { setError("Invalid API key — make sure it matches MCP_API_KEYS in your .env"); }
-    } catch { setError("Cannot reach gateway — is it running? Try: make run"); }
+      else { setError(t.invalidKey); }
+    } catch { setError(t.cantReach); }
     setLoading(false);
   };
 
@@ -266,16 +616,16 @@ function AuthScreen({ onAuth }) {
         <div style={{ textAlign:"center", marginBottom:4 }}>
           <div style={S.title}>MCP<span style={{color:COLORS.accent}}>·</span>Gateway</div>
         </div>
-        <div style={S.sub}>Choose how to get started</div>
+        <div style={S.sub}>{t.chooseStart}</div>
         <div style={S.tabs}>
-          <button style={S.tab(mode==="have")} onClick={()=>{setMode("have");setError("");}}>I have an API key</button>
-          <button style={S.tab(mode==="new")}  onClick={()=>{setMode("new");setError("");}}>Generate a new key</button>
+          <button style={S.tab(mode==="have")} onClick={()=>{setMode("have");setError("");}}>{t.haveKey}</button>
+          <button style={S.tab(mode==="new")}  onClick={()=>{setMode("new");setError("");}}>{t.generateKey}</button>
         </div>
 
         {mode === "have" && (
           <div style={{display:"flex",flexDirection:"column",gap:12}}>
             <div>
-              <div style={S.label}>API Key</div>
+              <div style={S.label}>{t.apiKey}</div>
               <input className="input" type="password" placeholder="your-api-key-here" value={key}
                 onChange={e=>setKey(e.target.value)} onKeyDown={e=>e.key==="Enter"&&submit()} autoFocus />
             </div>
@@ -286,7 +636,7 @@ function AuthScreen({ onAuth }) {
             </div>
             {error && <div style={{fontSize:12,color:COLORS.danger,padding:"8px 12px",background:"rgba(239,68,68,0.08)",borderRadius:6}}>{error}</div>}
             <button className="btn btn-primary" onClick={submit} disabled={loading||!key.trim()} style={{width:"100%",justifyContent:"center",padding:"11px"}}>
-              {loading ? <div className="spinner"/> : "Connect →"}
+              {loading ? <div className="spinner"/> : t.connect}
             </button>
           </div>
         )}
@@ -354,7 +704,7 @@ function AuthScreen({ onAuth }) {
 }
 
 // ── Quick Setup ────────────────────────────────────────────────────────────────
-function QuickSetup({ apiKey }) {
+function QuickSetup({ apiKey, t = T.en, isRtl = false }) {
   const [selected, setSelected]         = useState(null);
   const [creds, setCreds]               = useState({});
   const [outputMode, setOutputMode]     = useState("cursor");
@@ -427,7 +777,7 @@ function QuickSetup({ apiKey }) {
   return (
     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", height:"calc(100vh - 101px)" }}>
       <div style={{ borderRight:`1px solid ${COLORS.border}`, padding:24, overflowY:"auto" }}>
-        <div style={{ fontSize:11, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:16 }}>Choose a template</div>
+        <div style={{ fontSize:11, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:16 }}>{t.chooseTemplate}</div>
         {Object.entries(TEMPLATES).map(([cat, list]) => (
           <div key={cat} style={{ marginBottom:20 }}>
             <div style={{ fontSize:10, fontWeight:700, color:CAT_COLORS[cat], letterSpacing:"0.1em", textTransform:"uppercase", marginBottom:10, fontFamily:"JetBrains Mono, monospace" }}>{CAT_LABELS[cat]}</div>
@@ -448,7 +798,7 @@ function QuickSetup({ apiKey }) {
         {!selected && (
           <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100%", flexDirection:"column", gap:12, color:COLORS.textDim }}>
             <div style={{ fontSize:28 }}>←</div>
-            <div style={{ fontSize:14 }}>Select a template to get started</div>
+            <div style={{ fontSize:14 }}>{t.selectTemplate}</div>
           </div>
         )}
         {selected && (
@@ -464,7 +814,7 @@ function QuickSetup({ apiKey }) {
                 ))}
               </div>
             </div>
-            <button className="btn btn-primary" onClick={connect} disabled={connecting||(selected.creds.length>0&&!allFilled())} style={{width:"100%",justifyContent:"center",padding:"11px"}}>{connecting?<><div className="spinner"/> Connecting...</>:"Connect & Generate config ↓"}</button>
+            <button className="btn btn-primary" onClick={connect} disabled={connecting||(selected.creds.length>0&&!allFilled())} style={{width:"100%",justifyContent:"center",padding:"11px"}}>{connecting?<><div className="spinner"/> {t.connecting}</>:t.generateConfig}</button>
             {serverStatus && (
               <div className="fade-in" style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 12px", background: serverStatus==="ok"?"rgba(34,197,94,0.06)":"rgba(239,68,68,0.06)", border:`1px solid ${serverStatus==="ok"?"rgba(34,197,94,0.2)":"rgba(239,68,68,0.2)"}`, borderRadius:6 }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background: serverStatus==="ok"?COLORS.success:COLORS.danger, flexShrink:0 }}/>
@@ -475,16 +825,16 @@ function QuickSetup({ apiKey }) {
               <div className="fade-in">
                 <div style={{ display:"flex", gap:6, marginBottom:10 }}>
                   {["cursor","claude"].map(m => (
-                    <button key={m} className={`output-tab ${outputMode===m?"active":""}`} onClick={()=>setOutputMode(m)}>{m==="cursor"?"Cursor":"Claude Desktop"}</button>
+                    <button key={m} className={`output-tab ${outputMode===m?"active":""}`} onClick={()=>setOutputMode(m)}>{m==="cursor"?t.cursor:t.claudeDesktop}</button>
                   ))}
                 </div>
                 <div style={{ position:"relative", background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:8, padding:"16px 14px" }}>
-                  <button onClick={copyConfig} style={{ position:"absolute", top:8, right:8, background:COLORS.surface, border:`1px solid ${COLORS.borderHover}`, color:copied?COLORS.success:COLORS.textMuted, borderRadius:5, padding:"3px 10px", fontSize:11, cursor:"pointer", fontFamily:"JetBrains Mono, monospace" }}>{copied?"Copied ✓":"Copy"}</button>
+                  <button onClick={copyConfig} style={{ position:"absolute", top:8, right:8, background:COLORS.surface, border:`1px solid ${COLORS.borderHover}`, color:copied?COLORS.success:COLORS.textMuted, borderRadius:5, padding:"3px 10px", fontSize:11, cursor:"pointer", fontFamily:"JetBrains Mono, monospace" }}>{copied?t.copied:t.copy}</button>
                   <pre style={{ fontSize:11, fontFamily:"JetBrains Mono, monospace", color:"#a5b4fc", lineHeight:1.7, overflowX:"auto", paddingRight:48 }}>{configText}</pre>
                 </div>
                 <div style={{ fontSize:12, color:COLORS.textMuted, marginTop:10 }}>{configHint}</div>
                 <div style={{ marginTop:12, padding:"10px 14px", background:COLORS.surface, borderRadius:8, border:`1px solid ${COLORS.border}` }}>
-                  <div style={{ fontSize:11, color:COLORS.textMuted, marginBottom:6, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em" }}>Available tools</div>
+                  <div style={{ fontSize:11, color:COLORS.textMuted, marginBottom:6, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em" }}>{t.availableTools}</div>
                   <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>{selected.tools.map(t=><span key={t} className="tag">{t}</span>)}</div>
                 </div>
               </div>
@@ -497,7 +847,7 @@ function QuickSetup({ apiKey }) {
 }
 
 // ── Logs Tab ───────────────────────────────────────────────────────────────────
-function LogsTab({ apiKey }) {
+function LogsTab({ apiKey, t = T.en }) {
   const [logs, setLogs]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter]   = useState("");
@@ -528,7 +878,7 @@ function LogsTab({ apiKey }) {
     <div style={{ padding:24, height:"calc(100vh - 101px)", display:"flex", flexDirection:"column", gap:16, overflowY:"auto" }}>
       {/* Stats */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
-        {[{label:"Total calls",value:stats.total,color:COLORS.accent},{label:"Successful",value:stats.ok,color:COLORS.success},{label:"Failed",value:stats.err,color:COLORS.danger}].map(s=>(
+        {[{label:t.totalCalls,value:stats.total,color:COLORS.accent},{label:t.successful,value:stats.ok,color:COLORS.success},{label:t.failed,value:stats.err,color:COLORS.danger}].map(s=>(
           <div key={s.label} className="card" style={{padding:"14px 18px"}}>
             <div style={{fontSize:26,fontWeight:800,color:s.color,letterSpacing:"-0.02em"}}>{s.value}</div>
             <div style={{fontSize:12,color:COLORS.textMuted,marginTop:2}}>{s.label}</div>
@@ -538,17 +888,17 @@ function LogsTab({ apiKey }) {
 
       {/* Filter + Refresh */}
       <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-        <input className="input" placeholder="Filter by server, tool, or key..." value={filter} onChange={e=>setFilter(e.target.value)} style={{flex:1}} />
-        <button className="btn btn-ghost" onClick={fetchLogs} style={{whiteSpace:"nowrap"}}>↻ Refresh</button>
+        <input className="input" placeholder={t.filterPlaceholder} value={filter} onChange={e=>setFilter(e.target.value)} style={{flex:1}} />
+        <button className="btn btn-ghost" onClick={fetchLogs} style={{whiteSpace:"nowrap"}}>{t.refresh}</button>
       </div>
 
       {/* Log list */}
       <div className="card" style={{flex:1,padding:16,overflowY:"auto",minHeight:0}} ref={ref}>
         <div style={{fontSize:11,fontWeight:700,color:COLORS.textMuted,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:12}}>
-          Audit Log {loading && <span style={{color:COLORS.textDim}}>— loading...</span>}
+          {t.auditLog} {loading && <span style={{color:COLORS.textDim}}>— {t.loading}</span>}
         </div>
         {filtered.length === 0 && !loading && (
-          <div style={{color:COLORS.textDim,fontSize:12,fontFamily:"JetBrains Mono, monospace",padding:"20px 0"}}>No log entries yet — run a tool to see logs here.</div>
+          <div style={{color:COLORS.textDim,fontSize:12,fontFamily:"JetBrains Mono, monospace",padding:"20px 0"}}>{t.noLogs}</div>
         )}
         {[...filtered].reverse().map((l,i) => (
           <div key={i} className={`log-entry ${l.success?"log-ok":"log-err"}`}>
@@ -567,7 +917,7 @@ function LogsTab({ apiKey }) {
 }
 
 // ── Custom Server Builder ──────────────────────────────────────────────────────
-function CustomTab({ apiKey, onAdded }) {
+function CustomTab({ apiKey, onAdded, t = T.en }) {
   const [form, setForm] = useState({
     name:"", description:"", url:"http://localhost:8001",
     tools:"", transport:"http", start_command:""
@@ -860,6 +1210,13 @@ export default function App() {
   const [logs, setLogs]             = useState([]);
   const [showAdd, setShowAdd]       = useState(false);
   const [activeTab, setActiveTab]   = useState("setup");
+  const [lang, setLang]             = useState(() => localStorage.getItem("mcp_lang") || null);
+  const [splashDone, setSplashDone] = useState(false);
+
+  const t = T[lang] || T.en;
+  const isRtl = lang === "ar";
+
+  const selectLang = (code) => { localStorage.setItem("mcp_lang", code); setLang(code); };
 
   const addLog = (entry) => setLogs(prev => [...prev.slice(-100), entry]);
 
@@ -907,38 +1264,41 @@ export default function App() {
     tryConnect();
   }, []);
 
-  if (!authed) return (<><style>{css}</style><AuthScreen onAuth={auth} /></>);
+  if (!splashDone) return (<><style>{css}</style><SplashScreen onDone={() => setSplashDone(true)} /></>);
+  if (!lang) return (<><style>{css}</style><LanguageScreen onSelect={selectLang} /></>);
+  if (!authed) return (<><style>{css}</style><AuthScreen onAuth={auth} t={t} /></>);
 
   return (
     <>
       <style>{css}</style>
-      <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column" }}>
-        <StatusBar apiKey={apiKey} status={status} />
+      <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", direction: isRtl?"rtl":"ltr" }}>
+        <StatusBar apiKey={apiKey} status={status} onChangeLang={()=>{localStorage.removeItem("mcp_lang");setLang(null);}} />
 
-        <div className="nav-tab-bar">
-          <div className={`nav-tab ${activeTab==="setup"?"active":""}`}     onClick={()=>setActiveTab("setup")}>Quick Setup</div>
-          <div className={`nav-tab ${activeTab==="dashboard"?"active":""}`} onClick={()=>setActiveTab("dashboard")}>Dashboard</div>
-          <div className={`nav-tab ${activeTab==="logs"?"active":""}`}      onClick={()=>setActiveTab("logs")}>Logs</div>
-          <div className={`nav-tab ${activeTab==="custom"?"active":""}`}    onClick={()=>setActiveTab("custom")}>Custom Server</div>
+        <div className="nav-tab-bar" style={{direction: isRtl?"rtl":"ltr"}}>
+          <div className={`nav-tab ${activeTab==="setup"?"active":""}`}     onClick={()=>setActiveTab("setup")}>{t.quickSetup}</div>
+          <div className={`nav-tab ${activeTab==="dashboard"?"active":""}`} onClick={()=>setActiveTab("dashboard")}>{t.dashboard}</div>
+          <div className={`nav-tab ${activeTab==="logs"?"active":""}`}      onClick={()=>setActiveTab("logs")}>{t.logs}</div>
+          <div className={`nav-tab ${activeTab==="custom"?"active":""}`}    onClick={()=>setActiveTab("custom")}>{t.customTab}</div>
+          <div className="nav-tab" onClick={()=>{localStorage.removeItem("mcp_lang");setLang(null);}} style={{marginLeft:"auto",fontSize:11}}>🌐</div>
         </div>
 
-        {activeTab === "setup"     && <QuickSetup apiKey={apiKey} />}
-        {activeTab === "logs"      && <LogsTab apiKey={apiKey} />}
-        {activeTab === "custom"    && <CustomTab apiKey={apiKey} onAdded={loadServers} />}
+        {activeTab === "setup"     && <QuickSetup apiKey={apiKey} t={t} isRtl={isRtl} />}
+        {activeTab === "logs"      && <LogsTab apiKey={apiKey} t={t} />}
+        {activeTab === "custom"    && <CustomTab apiKey={apiKey} onAdded={loadServers} t={t} />}
 
         {activeTab === "dashboard" && (
           <div style={{ display:"grid", gridTemplateColumns:"260px 1fr", flex:1 }}>
             <div style={{ borderRight:`1px solid ${COLORS.border}`, padding:16, overflowY:"auto", height:"calc(100vh - 101px)" }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.08em" }}>Servers ({servers.length})</div>
-                <button className="btn btn-ghost" onClick={()=>setShowAdd(true)} style={{padding:"3px 8px",fontSize:11}}>+ Add</button>
+                <div style={{ fontSize:11, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.08em" }}>{t.servers} ({servers.length})</div>
+                <button className="btn btn-ghost" onClick={()=>setShowAdd(true)} style={{padding:"3px 8px",fontSize:11}}>{t.addServer}</button>
               </div>
               <ServersPanel servers={servers} selected={selected} onSelect={setSelected} />
             </div>
             <div style={{ padding:24, overflowY:"auto", height:"calc(100vh - 101px)", display:"flex", flexDirection:"column", gap:20 }}>
               {status && (
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
-                  {[{label:"Servers",value:status.servers_registered,color:COLORS.accent},{label:"Healthy",value:status.servers_healthy,color:COLORS.success},{label:"Calls Today",value:logs.length,color:COLORS.warning}].map(s=>(
+                  {[{label:t.servers,value:status.servers_registered,color:COLORS.accent},{label:t.healthy,value:status.servers_healthy,color:COLORS.success},{label:t.callsToday,value:logs.length,color:COLORS.warning}].map(s=>(
                     <div key={s.label} className="card" style={{padding:"16px 20px"}}>
                       <div style={{fontSize:28,fontWeight:800,color:s.color,letterSpacing:"-0.02em"}}>{s.value}</div>
                       <div style={{fontSize:12,color:COLORS.textMuted,marginTop:2}}>{s.label}</div>
@@ -949,7 +1309,7 @@ export default function App() {
               {selected ? <ToolRunner server={selected} apiKey={apiKey} onLog={addLog} /> : (
                 <div className="card fade-in" style={{padding:40,textAlign:"center",color:COLORS.textMuted}}>
                   <div style={{fontSize:32,marginBottom:12}}>←</div>
-                  <div style={{fontSize:14}}>Select a server to start calling tools</div>
+                  <div style={{fontSize:14}}>{t.selectServer}</div>
                 </div>
               )}
               <LogsPanel logs={logs} />
