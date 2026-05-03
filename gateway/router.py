@@ -175,3 +175,38 @@ async def setup_server(req: dict, api_key: str = Depends(require_api_key)):
         "credentials_saved": True,
         "message": f"{server_name} server {'started successfully' if started else 'failed to start — check credentials'}",
     }
+
+
+@router.post("/start-process")
+async def start_process(req: dict, api_key: str = Depends(require_api_key)):
+    """
+    Start a custom server by running a shell command in background.
+    req: { "name": "my-server", "command": "python my_server.py" }
+    """
+    import subprocess
+    import time
+
+    name    = req.get("name", "")
+    command = req.get("command", "").strip()
+
+    if not command:
+        raise HTTPException(status_code=400, detail="command is required")
+
+    try:
+        proc = subprocess.Popen(
+            command,
+            shell=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        time.sleep(1.5)
+
+        # Check if process is still running
+        if proc.poll() is None:
+            return {"name": name, "started": True, "pid": proc.pid,
+                    "message": f"{name} started (pid {proc.pid})"}
+        else:
+            return {"name": name, "started": False,
+                    "message": f"{name} process exited immediately — check your command"}
+    except Exception as e:
+        return {"name": name, "started": False, "message": str(e)}
