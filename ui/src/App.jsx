@@ -568,44 +568,68 @@ function LogsTab({ apiKey }) {
 
 // ── Custom Server Builder ──────────────────────────────────────────────────────
 function CustomTab({ apiKey, onAdded }) {
-  const [form, setForm] = useState({ name:"", description:"", url:"http://localhost:8001", tools:"", transport:"http" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState("");
-  const [success, setSuccess] = useState("");
+  const [form, setForm] = useState({
+    name:"", description:"", url:"http://localhost:8001",
+    tools:"", transport:"http", start_command:""
+  });
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState("");
+  const [success, setSuccess]     = useState("");
+  const [serverStatus, setServerStatus] = useState(null);
 
   const submit = async () => {
     if (!form.name||!form.url||!form.tools) { setError("Name, URL, and tools are required"); return; }
-    setLoading(true); setError(""); setSuccess("");
+    setLoading(true); setError(""); setSuccess(""); setServerStatus(null);
     try {
+      // 1. Add to registry
       const r = await fetch(`${API_BASE}/v1/servers`, {
         method: "POST",
         headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
         body: JSON.stringify({ ...form, tools: form.tools.split(",").map(t=>t.trim()).filter(Boolean) })
       });
-      if (r.ok) {
-        setSuccess(`Server "${form.name}" added to registry ✓`);
-        setForm({ name:"", description:"", url:"http://localhost:8001", tools:"", transport:"http" });
-        onAdded();
-      } else {
+      if (!r.ok) {
         const d = await r.json();
         setError(d.detail || "Failed to add server");
+        setLoading(false); return;
       }
+
+      // 2. If start_command provided — start the server
+      if (form.start_command.trim()) {
+        const r2 = await fetch(`${API_BASE}/v1/start-process`, {
+          method: "POST",
+          headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ name: form.name, command: form.start_command.trim() })
+        });
+        const d2 = await r2.json();
+        if (r2.ok && d2.started) {
+          setServerStatus("ok");
+          setSuccess(`Server "${form.name}" added and started ✓`);
+        } else {
+          setServerStatus("error");
+          setSuccess(`Server "${form.name}" added to registry — but failed to start: ${d2.message||""}`);
+        }
+      } else {
+        setSuccess(`Server "${form.name}" added to registry ✓`);
+      }
+
+      setForm({ name:"", description:"", url:"http://localhost:8001", tools:"", transport:"http", start_command:"" });
+      onAdded();
     } catch (e) { setError(e.message); }
     setLoading(false);
   };
 
   const fields = [
-    { key:"name",        label:"Server name",            placeholder:"my-selenium-server" },
-    { key:"description", label:"Description",            placeholder:"What does this server do?" },
-    { key:"url",         label:"Server URL",             placeholder:"http://localhost:8001" },
-    { key:"tools",       label:"Tools (comma-separated)",placeholder:"navigate, click, type, screenshot" },
+    { key:"name",          label:"Server name",             placeholder:"my-server" },
+    { key:"description",   label:"Description",             placeholder:"What does this server do?" },
+    { key:"url",           label:"Server URL",              placeholder:"http://localhost:8001" },
+    { key:"tools",         label:"Tools (comma-separated)", placeholder:"tool_one, tool_two, tool_three" },
   ];
 
   return (
     <div style={{ padding:24, height:"calc(100vh - 101px)", overflowY:"auto" }}>
       <div style={{ maxWidth:560 }}>
         <div style={{ fontSize:11, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Custom MCP Server</div>
-        <div style={{ fontSize:13, color:COLORS.textMuted, marginBottom:24 }}>Register any MCP server that's running locally or remotely.</div>
+        <div style={{ fontSize:13, color:COLORS.textMuted, marginBottom:24 }}>Register any MCP server and optionally start it automatically.</div>
 
         <div className="card" style={{ padding:24 }}>
           <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
@@ -625,22 +649,43 @@ function CustomTab({ apiKey, onAdded }) {
               </select>
             </div>
 
+            <div>
+              <div style={{ fontSize:11, color:COLORS.textMuted, marginBottom:5, textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                Start command <span style={{color:COLORS.textDim, textTransform:"none", letterSpacing:0}}>(optional — auto-starts server)</span>
+              </div>
+              <input className="input" placeholder="python templates/qa/my_server.py"
+                value={form.start_command}
+                onChange={e=>setForm(p=>({...p,start_command:e.target.value}))} />
+            </div>
+
+            {serverStatus && (
+              <div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 12px",
+                background: serverStatus==="ok"?"rgba(34,197,94,0.06)":"rgba(245,158,11,0.06)",
+                border:`1px solid ${serverStatus==="ok"?"rgba(34,197,94,0.2)":"rgba(245,158,11,0.2)"}`,
+                borderRadius:6 }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", flexShrink:0,
+                  background: serverStatus==="ok"?COLORS.success:COLORS.warning }}/>
+                <span style={{ fontSize:11, color: serverStatus==="ok"?COLORS.success:COLORS.warning }}>
+                  {serverStatus==="ok" ? "Server started" : "Added to registry — start it manually"}
+                </span>
+              </div>
+            )}
+
             {error   && <div style={{ fontSize:12, color:COLORS.danger,  padding:"8px 12px", background:"rgba(239,68,68,0.08)",  borderRadius:6 }}>{error}</div>}
             {success && <div style={{ fontSize:12, color:COLORS.success, padding:"8px 12px", background:"rgba(34,197,94,0.08)",  borderRadius:6 }}>{success}</div>}
 
             <button className="btn btn-primary" onClick={submit} disabled={loading} style={{ width:"100%", justifyContent:"center", padding:"11px" }}>
-              {loading ? <><div className="spinner"/> Adding...</> : "Add to Registry →"}
+              {loading ? <><div className="spinner"/> {form.start_command?"Starting...":"Adding..."}</> : form.start_command ? "Add & Start Server →" : "Add to Registry →"}
             </button>
           </div>
         </div>
 
-        {/* Help box */}
         <div style={{ marginTop:16, padding:"14px 16px", background:COLORS.surface, borderRadius:8, border:`1px solid ${COLORS.border}` }}>
           <div style={{ fontSize:11, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8 }}>How it works</div>
-          <div style={{ fontSize:12, color:COLORS.textMuted, lineHeight:1.7, fontFamily:"JetBrains Mono, monospace" }}>
-            Your server must expose a <span style={{color:"#a5b4fc"}}>POST /call</span> endpoint that accepts:<br/>
-            <span style={{color:"#a5b4fc"}}>{"{ tool: string, arguments: object }"}</span><br/><br/>
-            Use any template in <span style={{color:"#a5b4fc"}}>templates/</span> as a starting point.
+          <div style={{ fontSize:12, color:COLORS.textMuted, lineHeight:1.8, fontFamily:"JetBrains Mono, monospace" }}>
+            Server URL: <span style={{color:"#a5b4fc"}}>POST /call</span> → <span style={{color:"#a5b4fc"}}>{"{ tool, arguments }"}</span><br/>
+            Start command runs in background automatically.<br/>
+            Leave blank if your server is already running.
           </div>
         </div>
       </div>
