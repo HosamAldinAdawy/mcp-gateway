@@ -1,3 +1,4 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, status
 from gateway.models import ToolCallRequest, ToolCallResponse, ServerInfo
 from gateway.proxy import call_tool
@@ -8,6 +9,7 @@ from security.policy import check_policy
 from security.rate_limiter import check_rate_limit
 
 router = APIRouter()
+
 
 @router.post("/call", response_model=ToolCallResponse)
 async def tool_call(
@@ -101,7 +103,75 @@ async def get_logs(api_key: str = Depends(require_api_key), limit: int = 100):
 
 @router.get("/auto-key")
 async def auto_key():
-    import os
     keys = os.getenv("MCP_API_KEYS", "")
     first_key = keys.split(",")[0].strip()
     return {"key": first_key}
+
+
+@router.post("/setup")
+async def setup_server(req: dict, api_key: str = Depends(require_api_key)):
+    """
+    Save credentials to .env and start the server.
+    req: { "server": "jira", "credentials": { "JIRA_URL": "...", ... } }
+    """
+    import sys
+    import time
+    from pathlib import Path
+
+    server_name = req.get("server")
+    credentials = req.get("credentials", {})
+
+    if not server_name:
+        raise HTTPException(status_code=400, detail="server name is required")
+
+    # ── Write credentials to .env ─────────────────────────────────────────────
+    if getattr(sys, "frozen", False):
+        env_path = Path(sys.executable).parent / ".env"
+    else:
+        env_path = Path(".env")
+
+    # Read existing lines preserving comments
+    if env_path.exists():
+        existing_lines = env_path.read_text().splitlines()
+    else:
+        existing_lines = []
+
+    # Update existing keys or collect which new ones to append
+    updated_keys = set()
+    new_lines = []
+    for line in existing_lines:
+        stripped = line.strip()
+        if stripped and not stripped.startswith("#") and "=" in stripped:
+            k = stripped.split("=")[0].strip()
+            if k in credentials:
+                new_lines.append(f"{k}={credentials[k]}")
+                updated_keys.add(k)
+                continue
+        new_lines.append(line)
+
+    # Append any new keys not already in file
+    for k, v in credentials.items():
+        if k not in updated_keys:
+            new_lines.append(f"{k}={v}")
+
+    env_path.write_text("\n".join(new_lines) + "\n")
+
+    # ── Set in current process env ────────────────────────────────────────────
+    for k, v in credentials.items():
+        os.environ[k] = v
+
+    # ── Start the server ──────────────────────────────────────────────────────
+    try:
+        from gateway.server_manager import start_server
+        started = start_server(server_name)
+    except Exception as e:
+        started = False
+
+    time.sleep(1)
+
+    return {
+        "server": server_name,
+        "started": started,
+        "credentials_saved": True,
+        "message": f"{server_name} server {'started successfully' if started else 'failed to start — check credentials'}",
+    }
