@@ -355,14 +355,60 @@ function AuthScreen({ onAuth }) {
 
 // ── Quick Setup ────────────────────────────────────────────────────────────────
 function QuickSetup({ apiKey }) {
-  const [selected, setSelected]     = useState(null);
-  const [creds, setCreds]           = useState({});
-  const [outputMode, setOutputMode] = useState("cursor");
-  const [generated, setGenerated]   = useState(false);
-  const [copied, setCopied]         = useState(false);
+  const [selected, setSelected]         = useState(null);
+  const [creds, setCreds]               = useState({});
+  const [outputMode, setOutputMode]     = useState("cursor");
+  const [generated, setGenerated]       = useState(false);
+  const [copied, setCopied]             = useState(false);
+  const [connecting, setConnecting]     = useState(false);
+  const [serverStatus, setServerStatus] = useState(null);
+  const [serverMsg, setServerMsg]       = useState("");
 
-  const selectTemplate = (tpl) => { setSelected(tpl); setCreds({}); setGenerated(false); };
+  const selectTemplate = (tpl) => { setSelected(tpl); setCreds({}); setGenerated(false); setServerStatus(null); };
   const allFilled = () => selected && selected.creds.every(c => creds[c.key]?.trim());
+
+  const ENV_MAP = {
+    jira_url:"JIRA_URL", jira_email:"JIRA_EMAIL", jira_token:"JIRA_TOKEN",
+    testrail_url:"TESTRAIL_URL", testrail_user:"TESTRAIL_USER", testrail_key:"TESTRAIL_KEY",
+    github_token:"GITHUB_TOKEN", gitlab_token:"GITLAB_TOKEN", gitlab_url:"GITLAB_URL",
+    azure_org:"AZURE_ORG", azure_token:"AZURE_TOKEN",
+    confluence_url:"CONFLUENCE_URL", confluence_email:"CONFLUENCE_EMAIL", confluence_token:"CONFLUENCE_TOKEN",
+    linear_api_key:"LINEAR_API_KEY", slack_token:"SLACK_TOKEN",
+    notion_token:"NOTION_TOKEN", asana_token:"ASANA_TOKEN", figma_token:"FIGMA_TOKEN",
+    project_path:"PLAYWRIGHT_PROJECT_PATH", base_path:"FILESYSTEM_BASE_PATH",
+    base_url:"REST_API_BASE_URL", selenium_browser:"SELENIUM_BROWSER",
+    selenium_headless:"SELENIUM_HEADLESS", repo_path:"GIT_REPO_PATH",
+  };
+
+  const connect = async () => {
+    if (!selected) return;
+    setConnecting(true); setServerStatus(null); setServerMsg("");
+    const credentials = {};
+    selected.creds.forEach(c => {
+      const envKey = ENV_MAP[c.key] || c.key.toUpperCase();
+      if (creds[c.key]) credentials[envKey] = creds[c.key];
+    });
+    try {
+      const r = await fetch(`${API_BASE}/v1/setup`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ server: selected.id, credentials }),
+      });
+      const data = await r.json();
+      if (r.ok && data.started) {
+        setServerStatus("ok");
+        setServerMsg(`${selected.name} server started — ready`);
+      } else {
+        setServerStatus("error");
+        setServerMsg(data.message || "Failed to start server");
+      }
+      setGenerated(true);
+    } catch (e) {
+      setServerStatus("error");
+      setServerMsg("Cannot reach gateway — is it running?");
+    }
+    setConnecting(false);
+  };
 
   const buildConfig = (mode) => {
     if (!selected) return "";
@@ -418,7 +464,13 @@ function QuickSetup({ apiKey }) {
                 ))}
               </div>
             </div>
-            <button className="btn btn-primary" onClick={()=>setGenerated(true)} disabled={selected.creds.length>0&&!allFilled()} style={{width:"100%",justifyContent:"center",padding:"11px"}}>Generate config ↓</button>
+            <button className="btn btn-primary" onClick={connect} disabled={connecting||(selected.creds.length>0&&!allFilled())} style={{width:"100%",justifyContent:"center",padding:"11px"}}>{connecting?<><div className="spinner"/> Connecting...</>:"Connect & Generate config ↓"}</button>
+            {serverStatus && (
+              <div className="fade-in" style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 12px", background: serverStatus==="ok"?"rgba(34,197,94,0.06)":"rgba(239,68,68,0.06)", border:`1px solid ${serverStatus==="ok"?"rgba(34,197,94,0.2)":"rgba(239,68,68,0.2)"}`, borderRadius:6 }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", background: serverStatus==="ok"?COLORS.success:COLORS.danger, flexShrink:0 }}/>
+                <span style={{ fontSize:11, color: serverStatus==="ok"?COLORS.success:COLORS.danger }}>{serverMsg}</span>
+              </div>
+            )}
             {generated && (
               <div className="fade-in">
                 <div style={{ display:"flex", gap:6, marginBottom:10 }}>
@@ -782,18 +834,32 @@ export default function App() {
   useEffect(() => { if (authed) { loadServers(); loadStatus(); } }, [authed]);
 
   useEffect(() => {
-    const stored = localStorage.getItem("mcp_key");
-    if (stored) {
-      setApiKey(stored);
-      fetch(`${API_BASE}/v1/servers`, { headers: { "X-API-Key": stored } })
-        .then(r => { if (r.ok) setAuthed(true); }).catch(() => {});
-      return;
-    }
-    fetch(`${API_BASE}/v1/auto-key`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.key) { setApiKey(d.key); localStorage.setItem("mcp_key", d.key); setAuthed(true); }
-      }).catch(() => {});
+    const tryConnect = async () => {
+      // 1. try stored key
+      const stored = localStorage.getItem("mcp_key");
+      if (stored) {
+        try {
+          const r = await fetch(`${API_BASE}/v1/servers`, { headers: { "X-API-Key": stored } });
+          if (r.ok) { setApiKey(stored); setAuthed(true); return; }
+        } catch {}
+      }
+      // 2. try auto-key from gateway
+      try {
+        const r = await fetch(`${API_BASE}/v1/auto-key`);
+        if (r.ok) {
+          const d = await r.json();
+          if (d.key) {
+            localStorage.setItem("mcp_key", d.key);
+            setApiKey(d.key);
+            setAuthed(true);
+            return;
+          }
+        }
+      } catch {}
+      // 3. fallback — show auth screen
+      setAuthed(false);
+    };
+    tryConnect();
   }, []);
 
   if (!authed) return (<><style>{css}</style><AuthScreen onAuth={auth} /></>);
