@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-
 from gateway.models import ToolCallRequest, ToolCallResponse, ServerInfo
 from gateway.proxy import call_tool
 from registry.registry import get_server, get_all_servers
@@ -10,7 +9,6 @@ from security.rate_limiter import check_rate_limit
 
 router = APIRouter()
 
-
 @router.post("/call", response_model=ToolCallResponse)
 async def tool_call(
     req: ToolCallRequest,
@@ -18,20 +16,17 @@ async def tool_call(
 ):
     check_rate_limit(api_key)
     check_policy(api_key, req.server, req.tool)
-
     server = get_server(req.server)
     if not server:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Server '{req.server}' not found or not trusted in registry.",
         )
-
     if req.tool not in server.tools:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Tool '{req.tool}' not registered for server '{req.server}'.",
         )
-
     response = await call_tool(server, req.tool, req.arguments)
     log_call(
         api_key=api_key,
@@ -41,7 +36,6 @@ async def tool_call(
         success=response.success,
         error=response.error,
     )
-
     return response
 
 
@@ -77,6 +71,34 @@ async def add_server_api(
         return server
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.delete("/servers/{name}")
+async def remove_server_api(name: str, api_key: str = Depends(require_api_key)):
+    from registry.registry import remove_server
+    removed = remove_server(name)
+    if not removed:
+        raise HTTPException(status_code=404, detail=f"Server '{name}' not found.")
+    return {"removed": name}
+
+
+@router.get("/logs")
+async def get_logs(api_key: str = Depends(require_api_key), limit: int = 100):
+    import json
+    from pathlib import Path
+    log_path = Path("logs/audit.jsonl")
+    if not log_path.exists():
+        return []
+    lines = [l for l in log_path.read_text().strip().split("\n") if l]
+    entries = []
+    for l in lines[-limit:]:
+        try:
+            entries.append(json.loads(l))
+        except Exception:
+            pass
+    return entries
+
+
 @router.get("/auto-key")
 async def auto_key():
     import os
