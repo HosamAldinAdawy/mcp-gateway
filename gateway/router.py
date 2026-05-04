@@ -239,3 +239,18 @@ async def start_process(req: dict, api_key: str = Depends(require_api_key)):
                     "message": f"{name} process exited immediately — check your command"}
     except Exception as e:
         return {"name": name, "started": False, "message": str(e)}
+
+
+@router.post("/restart")
+async def restart_gateway(api_key: str = Depends(require_api_key)):
+    """Restart the gateway process."""
+    import sys
+    import threading
+
+    def do_restart():
+        import time
+        time.sleep(1)
+        os.execv(sys.executable, [sys.executable] + sys.argv)
+
+    threading.Thread(target=do_restart, daemon=True).start()
+    return {"message": "Restarting gateway..."}
