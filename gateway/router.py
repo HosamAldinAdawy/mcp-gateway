@@ -108,6 +108,39 @@ async def auto_key():
     return {"key": first_key}
 
 
+@router.get("/settings")
+async def get_settings(api_key: str = Depends(require_api_key)):
+    """Return current gateway settings from .env"""
+    import sys
+    from pathlib import Path
+
+    if getattr(sys, "frozen", False):
+        env_path = Path(sys.executable).parent / ".env"
+    else:
+        env_path = Path(".env")
+
+    settings = {
+        "port":         os.getenv("PORT", "8000"),
+        "rate_limit":   os.getenv("RATE_LIMIT_PER_MINUTE", "60"),
+        "cors_origins": os.getenv("ALLOWED_ORIGINS", "*"),
+        "log_level":    os.getenv("LOG_LEVEL", "info"),
+    }
+
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            k = k.strip(); v = v.strip()
+            if k == "PORT":                    settings["port"]         = v
+            elif k == "RATE_LIMIT_PER_MINUTE": settings["rate_limit"]   = v
+            elif k == "ALLOWED_ORIGINS":       settings["cors_origins"] = v
+            elif k == "LOG_LEVEL":             settings["log_level"]    = v
+
+    return settings
+
+
 @router.post("/setup")
 async def setup_server(req: dict, api_key: str = Depends(require_api_key)):
     """
@@ -130,13 +163,11 @@ async def setup_server(req: dict, api_key: str = Depends(require_api_key)):
     else:
         env_path = Path(".env")
 
-    # Read existing lines preserving comments
     if env_path.exists():
         existing_lines = env_path.read_text().splitlines()
     else:
         existing_lines = []
 
-    # Update existing keys or collect which new ones to append
     updated_keys = set()
     new_lines = []
     for line in existing_lines:
@@ -149,31 +180,30 @@ async def setup_server(req: dict, api_key: str = Depends(require_api_key)):
                 continue
         new_lines.append(line)
 
-    # Append any new keys not already in file
     for k, v in credentials.items():
         if k not in updated_keys:
             new_lines.append(f"{k}={v}")
 
     env_path.write_text("\n".join(new_lines) + "\n")
 
-    # ── Set in current process env ────────────────────────────────────────────
     for k, v in credentials.items():
         os.environ[k] = v
 
-    # ── Start the server ──────────────────────────────────────────────────────
-    try:
-        from gateway.server_manager import start_server
-        started = start_server(server_name)
-    except Exception as e:
-        started = False
-
-    time.sleep(1)
+    # ── Start the server (skip for _settings) ────────────────────────────────
+    started = False
+    if server_name != "_settings":
+        try:
+            from gateway.server_manager import start_server
+            started = start_server(server_name)
+        except Exception:
+            started = False
+        time.sleep(1)
 
     return {
         "server": server_name,
         "started": started,
         "credentials_saved": True,
-        "message": f"{server_name} server {'started successfully' if started else 'failed to start — check credentials'}",
+        "message": f"{server_name} {'settings saved' if server_name=='_settings' else ('server started successfully' if started else 'failed to start — check credentials')}",
     }
 
 
@@ -201,7 +231,6 @@ async def start_process(req: dict, api_key: str = Depends(require_api_key)):
         )
         time.sleep(1.5)
 
-        # Check if process is still running
         if proc.poll() is None:
             return {"name": name, "started": True, "pid": proc.pid,
                     "message": f"{name} started (pid {proc.pid})"}
