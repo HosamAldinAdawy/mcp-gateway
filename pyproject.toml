@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mcp-gateway"
 version = "1.0.0"
-description = "Secure remote MCP gateway — auth, audit, registry, and SSE transport in one command"
+description = "Secure local MCP gateway — auth, audit, registry, 22 templates. Control Your MCP."
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
-keywords = ["mcp", "llm", "gateway", "claude", "security", "ai-tools"]
+keywords = ["mcp", "llm", "gateway", "claude", "cursor", "security", "ai-tools", "jira", "selenium"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -22,14 +22,14 @@ classifiers = [
     "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
 ]
 dependencies = [
-    "fastapi==0.115.0",
-    "uvicorn[standard]==0.30.0",
-    "httpx==0.27.0",
-    "pydantic==2.8.0",
-    "python-dotenv==1.0.1",
-    "sse-starlette==2.1.3",
-    "anyio==4.4.0",
-    "aiofiles==23.2.1",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "httpx>=0.27.0",
+    "pydantic>=2.8.0",
+    "python-dotenv>=1.0.1",
+    "sse-starlette>=2.1.3",
+    "anyio>=4.4.0",
+    "aiofiles>=23.2.1",
 ]
 
 [project.urls]
@@ -41,17 +41,14 @@ Issues = "https://github.com/HosamAldinAdawy/mcp-gateway/issues"
 mcp-gateway = "mcp_gateway.cli_entry:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "."]
+include = ["mcp_gateway*", "gateway*", "registry*", "security*", "templates*"]
 
 [tool.setuptools.package-data]
-"mcp_gateway" = [
+"*" = [
     "*.json",
-    "*.html",
-    "*.md",
     "*.env.example",
     "templates/**/*.py",
     "security/policy.json",
     "registry/registry.json",
-    "scripts/*.sh",
-    "infra/*",
 ]
