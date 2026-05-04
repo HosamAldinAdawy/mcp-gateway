@@ -23,11 +23,21 @@ const css = `
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   body {
-    background: ${COLORS.bg};
-    color: ${COLORS.text};
+    background: var(--bg);
+    color: var(--text);
     font-family: 'Syne', sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
+  }
+  .theme-dark {
+    --bg: #0a0a0f; --surface: #13131a; --border: #1e1e2e;
+    --border-hover: #2e2e4e; --text: #e2e8f0;
+    --text-muted: #64748b; --text-dim: #334155;
+  }
+  .theme-light {
+    --bg: #f8fafc; --surface: #ffffff; --border: #e2e8f0;
+    --border-hover: #cbd5e1; --text: #0f172a;
+    --text-muted: #64748b; --text-dim: #94a3b8;
   }
 
   ::-webkit-scrollbar { width: 4px; }
@@ -152,9 +162,9 @@ const css = `
 const TEMPLATES = {
   qa: [
     { id: "jira", name: "Jira", tools: ["create_issue","search_issues","update_issue","get_issue","add_comment"],
-      creds: [{ key: "jira_url", label: "Jira URL", placeholder: "https://company.atlassian.net" }, { key: "jira_email", label: "Email", placeholder: "you@company.com" }, { key: "jira_token", label: "API token", placeholder: "ATATT..." }] },
+      creds: [{ key: "jira_url", label: "Jira URL", placeholder: "https://company.atlassian.net" }, { key: "jira_email", label: "Email", placeholder: "you@company.com" }, { key: "jira_token", label: "API token", placeholder: "ATATT...", secret: true }] },
     { id: "testrail", name: "TestRail", tools: ["get_test_cases","create_test_case","add_result","create_run"],
-      creds: [{ key: "testrail_url", label: "TestRail URL", placeholder: "https://company.testrail.io" }, { key: "testrail_user", label: "Username", placeholder: "you@company.com" }, { key: "testrail_key", label: "API key", placeholder: "your-api-key" }] },
+      creds: [{ key: "testrail_url", label: "TestRail URL", placeholder: "https://company.testrail.io" }, { key: "testrail_user", label: "Username", placeholder: "you@company.com" }, { key: "testrail_key", label: "API key", placeholder: "your-api-key", secret: true }] },
     { id: "pytest", name: "Pytest", tools: ["run_tests","run_suite","get_coverage"],
       creds: [{ key: "project_path", label: "Project path", placeholder: "/home/user/project" }] },
     { id: "selenium", name: "Selenium", tools: ["navigate","click","type","get_text","screenshot","execute_script","find_elements","get_page_source","back","refresh","close"],
@@ -162,18 +172,18 @@ const TEMPLATES = {
   ],
   dev: [
     { id: "github", name: "GitHub", tools: ["create_issue","list_prs","merge_pr","create_branch","get_commits"],
-      creds: [{ key: "github_token", label: "GitHub token", placeholder: "ghp_..." }] },
+      creds: [{ key: "github_token", label: "GitHub token", placeholder: "ghp_...", secret: true }] },
     { id: "git-local", name: "Git local", tools: ["status","diff","commit","log","branch"],
       creds: [{ key: "repo_path", label: "Repo path", placeholder: "/home/user/myrepo" }] },
     { id: "azure", name: "Azure DevOps", tools: ["create_work_item","get_pipeline","run_pipeline"],
-      creds: [{ key: "azure_org", label: "Organization", placeholder: "myorg" }, { key: "azure_token", label: "PAT token", placeholder: "your-pat" }] },
+      creds: [{ key: "azure_org", label: "Organization", placeholder: "myorg" }, { key: "azure_token", label: "PAT token", placeholder: "your-pat", secret: true }] },
     { id: "code-runner", name: "Code runner", tools: ["run_python","run_shell","run_javascript"], creds: [] },
   ],
   general: [
     { id: "filesystem", name: "Filesystem", tools: ["read_file","write_file","search_files","list_dir"],
       creds: [{ key: "base_path", label: "Base path", placeholder: "/home/user" }] },
     { id: "slack", name: "Slack", tools: ["send_message","list_channels","get_messages"],
-      creds: [{ key: "slack_token", label: "Bot token", placeholder: "xoxb-..." }] },
+      creds: [{ key: "slack_token", label: "Bot token", placeholder: "xoxb-...", secret: true }] },
     { id: "rest-api", name: "REST API", tools: ["get","post","put","patch","delete"],
       creds: [{ key: "base_url", label: "Base URL", placeholder: "https://api.example.com" }] },
     { id: "web-search", name: "Web search", tools: ["search","fetch_page"], creds: [] },
@@ -503,6 +513,30 @@ function SplashAnimator() {
   return null;
 }
 
+// ── Notification System ────────────────────────────────────────────────────────
+function NotificationContainer({ notifications }) {
+  return (
+    <div style={{ position:"fixed", top:16, right:16, zIndex:9999, display:"flex", flexDirection:"column", gap:8, maxWidth:320 }}>
+      {notifications.map(n => (
+        <div key={n.id} className="fade-in" style={{
+          background: n.type==="success" ? "rgba(34,197,94,0.12)" : n.type==="error" ? "rgba(239,68,68,0.12)" : "rgba(99,102,241,0.12)",
+          border: `1px solid ${n.type==="success"?"rgba(34,197,94,0.3)":n.type==="error"?"rgba(239,68,68,0.3)":"rgba(99,102,241,0.3)"}`,
+          borderRadius: 8, padding: "10px 14px", display:"flex", alignItems:"flex-start", gap:10,
+          backdropFilter: "blur(8px)",
+        }}>
+          <span style={{fontSize:14,flexShrink:0}}>
+            {n.type==="success"?"✅":n.type==="error"?"❌":"ℹ️"}
+          </span>
+          <div style={{flex:1}}>
+            {n.title && <div style={{fontSize:12,fontWeight:700,color:n.type==="success"?COLORS.success:n.type==="error"?COLORS.danger:"#818cf8",marginBottom:2}}>{n.title}</div>}
+            <div style={{fontSize:11,color:COLORS.textMuted,fontFamily:"JetBrains Mono, monospace"}}>{n.message}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── Language Selector Screen ───────────────────────────────────────────────────
 function LanguageScreen({ onSelect }) {
   const langs = [
@@ -534,16 +568,17 @@ function LanguageScreen({ onSelect }) {
 
 
 // ── Status Bar ─────────────────────────────────────────────────────────────────
-function StatusBar({ apiKey, status, onChangeLang }) {
+function StatusBar({ apiKey, status, dark = true, onChangeLang }) {
+  const [showKey, setShowKey] = useState(false);
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderBottom: `1px solid ${COLORS.border}`, background: COLORS.surface }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderBottom: `1px solid ${dark?"#1e1e2e":"#e2e8f0"}`, background: dark?"#0d0d14":"#ffffff" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.02em" }}>
           MCP<span style={{ color: COLORS.accent }}>·</span>Gateway
         </div>
         <span className="badge badge-blue mono">v1.0.0</span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         {status && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: COLORS.textMuted }}>
             <div className={`dot ${status.servers_healthy > 0 ? "dot-green" : "dot-red"}`} />
@@ -551,9 +586,14 @@ function StatusBar({ apiKey, status, onChangeLang }) {
           </div>
         )}
         {apiKey && (
-          <span className="mono" style={{ fontSize: 11, color: COLORS.textMuted, background: COLORS.bg, padding: "4px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}` }}>
-            {apiKey.slice(0, 8)}***
-          </span>
+          <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+            <span className="mono" style={{ fontSize: 11, color: COLORS.textMuted, background: COLORS.bg, padding: "4px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, letterSpacing: showKey?".02em":".1em", transition:"all .2s" }}>
+              {showKey ? apiKey : apiKey.slice(0,4) + "••••••••••••" + apiKey.slice(-4)}
+            </span>
+            <button onClick={()=>setShowKey(p=>!p)} style={{ background:"transparent", border:"none", cursor:"pointer", color:COLORS.textMuted, fontSize:13, padding:"2px 4px", lineHeight:1 }} title={showKey?"Hide key":"Show key"}>
+              {showKey ? "🙈" : "👁"}
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -704,7 +744,7 @@ function AuthScreen({ onAuth, t = T.en }) {
 }
 
 // ── Quick Setup ────────────────────────────────────────────────────────────────
-function QuickSetup({ apiKey, t = T.en, isRtl = false }) {
+function QuickSetup({ apiKey, t = T.en, isRtl = false, notify = ()=>{} }) {
   const [selected, setSelected]         = useState(null);
   const [creds, setCreds]               = useState({});
   const [outputMode, setOutputMode]     = useState("cursor");
@@ -748,9 +788,11 @@ function QuickSetup({ apiKey, t = T.en, isRtl = false }) {
       if (r.ok && data.started) {
         setServerStatus("ok");
         setServerMsg(`${selected.name} server started — ready`);
+        notify("success", `${selected.name} started ✅`, `Running on port — ready to use`);
       } else {
         setServerStatus("error");
         setServerMsg(data.message || "Failed to start server");
+        notify("error", `${selected.name} failed`, data.message || "Check your credentials");
       }
       setGenerated(true);
     } catch (e) {
@@ -774,7 +816,11 @@ function QuickSetup({ apiKey, t = T.en, isRtl = false }) {
       ? "حطّه في %APPDATA%\\Claude\\claude_desktop_config.json (Windows) أو ~/Library/Application Support/Claude/claude_desktop_config.json (Mac)"
       : "Add it to %APPDATA%\\Claude\\claude_desktop_config.json (Windows) or ~/Library/Application Support/Claude/claude_desktop_config.json (Mac)";
 
-  const copyConfig = () => { navigator.clipboard.writeText(configText).catch(()=>{}); setCopied(true); setTimeout(()=>setCopied(false),1500); };
+  const copyConfig = () => {
+    navigator.clipboard.writeText(configText).catch(()=>{});
+    setCopied(true); setTimeout(()=>setCopied(false),1500);
+    notify("success", "Config copied!", `${selected?.name} config ready — paste it in ${outputMode==="cursor"?"Cursor":"Claude Desktop"}`);
+  };
 
   return (
     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", height:"calc(100vh - 101px)" }}>
@@ -808,12 +854,25 @@ function QuickSetup({ apiKey, t = T.en, isRtl = false }) {
             <div>
               <div style={{ fontSize:11, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:14 }}>{selected.name} — credentials</div>
               <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                {selected.creds.map(c => (
-                  <div key={c.key}>
-                    <div style={{ fontSize:11, color:COLORS.textMuted, marginBottom:5, textTransform:"uppercase", letterSpacing:"0.06em" }}>{c.label}</div>
-                    <input className="input" placeholder={c.placeholder} value={creds[c.key]||""} onChange={e=>{setCreds(p=>({...p,[c.key]:e.target.value}));setGenerated(false);}} />
-                  </div>
-                ))}
+                {selected.creds.map(c => {
+                  const [show, setShow] = useState(false);
+                  return (
+                    <div key={c.key}>
+                      <div style={{ fontSize:11, color:COLORS.textMuted, marginBottom:5, textTransform:"uppercase", letterSpacing:"0.06em" }}>{c.label}</div>
+                      <div style={{position:"relative"}}>
+                        <input className="input" type={c.secret && !show ? "password" : "text"}
+                          placeholder={c.placeholder} value={creds[c.key]||""}
+                          onChange={e=>{setCreds(p=>({...p,[c.key]:e.target.value}));setGenerated(false);}}
+                          style={{paddingRight: c.secret ? "32px" : "12px"}} />
+                        {c.secret && (
+                          <button onClick={()=>setShow(p=>!p)} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:"transparent",border:"none",cursor:"pointer",color:COLORS.textMuted,fontSize:13,lineHeight:1,padding:0}}>
+                            {show ? "🙈" : "👁"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
             <button className="btn btn-primary" onClick={connect} disabled={connecting||(selected.creds.length>0&&!allFilled())} style={{width:"100%",justifyContent:"center",padding:"11px"}}>{connecting?<><div className="spinner"/> {t.connecting}</>:t.generateConfig}</button>
@@ -848,8 +907,319 @@ function QuickSetup({ apiKey, t = T.en, isRtl = false }) {
   );
 }
 
+// ── Settings Tab ──────────────────────────────────────────────────────────────
+function SettingsTab({ apiKey, notify = ()=>{} }) {
+  const [form, setForm] = useState({
+    port: "8000", rate_limit: "60", cors_origins: "*",
+    log_level: "info",
+  });
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded]   = useState(false);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/v1/settings`, { headers: { "X-API-Key": apiKey } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) { setForm(f => ({...f,...d})); } setLoaded(true); })
+      .catch(() => setLoaded(true));
+  }, []);
+
+  const save = async () => {
+    setLoading(true);
+    try {
+      const credentials = {
+        PORT: form.port,
+        RATE_LIMIT_PER_MINUTE: form.rate_limit,
+        ALLOWED_ORIGINS: form.cors_origins,
+        LOG_LEVEL: form.log_level,
+      };
+      const r = await fetch(`${API_BASE}/v1/setup`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ server: "_settings", credentials }),
+      });
+      if (r.ok) {
+        notify("success", "Settings saved ✅", "Restart gateway to apply port changes");
+      } else {
+        notify("error", "Failed to save", "Check gateway logs");
+      }
+    } catch (e) { notify("error", "Error", e.message); }
+    setLoading(false);
+  };
+
+  const fields = [
+    { key:"port",         label:"Port",             placeholder:"8000",  hint:"Gateway port (restart required)" },
+    { key:"rate_limit",   label:"Rate limit / min", placeholder:"60",    hint:"Max requests per minute per API key" },
+    { key:"cors_origins", label:"CORS origins",     placeholder:"*",     hint:"Comma-separated origins or * for all" },
+    { key:"log_level",    label:"Log level",        placeholder:"info",  hint:"debug / info / warning / error" },
+  ];
+
+  return (
+    <div style={{ padding:24, height:"calc(100vh - 101px)", overflowY:"auto" }}>
+      <div style={{ maxWidth:520 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Settings</div>
+        <div style={{ fontSize:13, color:COLORS.textMuted, marginBottom:24 }}>Configure gateway — saved to .env automatically.</div>
+
+        <div className="card" style={{ padding:24 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            {fields.map(f => (
+              <div key={f.key}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:5 }}>
+                  <div style={{ fontSize:11, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.06em" }}>{f.label}</div>
+                  <div style={{ fontSize:10, color:COLORS.textDim }}>{f.hint}</div>
+                </div>
+                <input className="input" placeholder={f.placeholder} value={form[f.key]}
+                  onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))} />
+              </div>
+            ))}
+
+            <div style={{ borderTop:`1px solid ${COLORS.border}`, paddingTop:16, display:"flex", gap:10 }}>
+              <button className="btn btn-primary" onClick={save} disabled={loading}
+                style={{ flex:1, justifyContent:"center", padding:"10px" }}>
+                {loading ? <><div className="spinner"/> Saving...</> : "Save Settings →"}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ marginTop:14, padding:"10px 14px", background:COLORS.surface, borderRadius:8, border:`1px solid ${COLORS.border}` }}>
+          <div style={{ fontSize:11, color:COLORS.textMuted, lineHeight:1.7 }}>
+            ⚠️ Changing the <span style={{color:"#a5b4fc",fontFamily:"JetBrains Mono,monospace"}}>PORT</span> requires restarting the gateway to take effect.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Server Details Panel ───────────────────────────────────────────────────────
+function ServerDetails({ server, apiKey, health = {}, notify = ()=>{} }) {
+  const [logs, setLogs]       = useState([]);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/v1/logs?limit=200`, { headers: { "X-API-Key": apiKey } })
+      .then(r => r.ok ? r.json() : [])
+      .then(all => setLogs(all.filter(l => l.server === server.name)))
+      .catch(() => {});
+  }, [server.name]);
+
+  const testConnection = async () => {
+    setTesting(true); setTestResult(null);
+    try {
+      const r = await fetch(`${server.url}/health`, { signal: AbortSignal.timeout(3000) });
+      setTestResult({ ok: true, status: r.status });
+      notify("success", `${server.name} is online ✅`, `Responded with ${r.status}`);
+    } catch (e) {
+      setTestResult({ ok: false, error: e.message });
+      notify("error", `${server.name} is offline`, e.message);
+    }
+    setTesting(false);
+  };
+
+  const todayLogs = logs.filter(l => new Date(l.timestamp).toDateString() === new Date().toDateString());
+  const okCount   = todayLogs.filter(l => l.success).length;
+  const errCount  = todayLogs.filter(l => !l.success).length;
+  const lastErr   = logs.filter(l => !l.success)[0];
+
+  return (
+    <div className="card fade-in" style={{ padding:24 }}>
+      {/* Header */}
+      <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
+        <div style={{ width:8, height:8, borderRadius:"50%", flexShrink:0,
+          background: health[server.name]===true?COLORS.success:health[server.name]===false?COLORS.danger:COLORS.textDim }} />
+        <div style={{ fontSize:18, fontWeight:700 }}>{server.name}</div>
+        <span className="badge badge-blue">{server.transport}</span>
+        <span style={{ fontSize:11, color:COLORS.textMuted, fontFamily:"JetBrains Mono, monospace", marginLeft:"auto" }}>{server.url}</span>
+      </div>
+
+      {/* Stats */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:16 }}>
+        {[
+          { label:"Calls today", value:todayLogs.length, color:COLORS.accent },
+          { label:"Successful",  value:okCount,           color:COLORS.success },
+          { label:"Failed",      value:errCount,          color:COLORS.danger },
+        ].map(s => (
+          <div key={s.label} style={{ background:COLORS.bg, border:`1px solid ${COLORS.border}`, borderRadius:8, padding:"10px 14px" }}>
+            <div style={{ fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+            <div style={{ fontSize:11, color:COLORS.textMuted, marginTop:1 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tools */}
+      <div style={{ marginBottom:16 }}>
+        <div style={{ fontSize:11, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:8 }}>Tools ({server.tools.length})</div>
+        <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
+          {server.tools.map(t => <span key={t} className="tag">{t}</span>)}
+        </div>
+      </div>
+
+      {/* Last error */}
+      {lastErr && (
+        <div style={{ marginBottom:16, padding:"10px 12px", background:"rgba(239,68,68,0.06)", border:"1px solid rgba(239,68,68,0.2)", borderRadius:8 }}>
+          <div style={{ fontSize:10, color:COLORS.danger, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:4 }}>Last error</div>
+          <div style={{ fontSize:11, color:COLORS.textMuted, fontFamily:"JetBrains Mono, monospace" }}>
+            {lastErr.tool} — {String(lastErr.error).slice(0,120)}
+          </div>
+          <div style={{ fontSize:10, color:COLORS.textDim, marginTop:4 }}>{lastErr.timestamp ? new Date(lastErr.timestamp).toLocaleString() : ""}</div>
+        </div>
+      )}
+
+      {/* Test connection */}
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <button className="btn btn-ghost" onClick={testConnection} disabled={testing}
+          style={{ fontSize:12 }}>
+          {testing ? <><div className="spinner"/> Testing...</> : "⚡ Test connection"}
+        </button>
+        {testResult && (
+          <span style={{ fontSize:11, color:testResult.ok?COLORS.success:COLORS.danger, fontFamily:"JetBrains Mono, monospace" }}>
+            {testResult.ok ? `✓ Online (${testResult.status})` : `✗ ${testResult.error}`}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+// ── Export Logs ────────────────────────────────────────────────────────────────
+function exportLogsCSV(logs) {
+  if (!logs.length) return;
+  const headers = ["timestamp","server","tool","success","api_key","error"];
+  const rows = logs.map(l =>
+    headers.map(h => {
+      const v = l[h] ?? "";
+      return `"${String(v).replace(/"/g,'""')}"`;
+    }).join(",")
+  );
+  const csv = [headers.join(","), ...rows].join("\n");
+  const blob = new Blob([csv], { type:"text/csv" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href = url; a.download = `mcp-gateway-logs-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+// ── Keys Tab ───────────────────────────────────────────────────────────────────
+function KeysTab({ apiKey, notify = ()=>{} }) {
+  const [keys, setKeys]       = useState([]);
+  const [newKey, setNewKey]   = useState("");
+  const [newName, setNewName] = useState("");
+  const [showKeys, setShowKeys] = useState({});
+
+  const loadKeys = () => {
+    const stored = localStorage.getItem("mcp_keys");
+    if (stored) {
+      try { setKeys(JSON.parse(stored)); } catch {}
+    } else {
+      // Init with current key
+      const initial = [{ id: 1, name: "Default", key: apiKey, created: new Date().toISOString() }];
+      setKeys(initial);
+      localStorage.setItem("mcp_keys", JSON.stringify(initial));
+    }
+  };
+
+  useEffect(() => { loadKeys(); }, []);
+
+  const generateKey = () => {
+    const arr = new Uint8Array(24);
+    crypto.getRandomValues(arr);
+    setNewKey(Array.from(arr).map(b=>b.toString(16).padStart(2,"0")).join(""));
+  };
+
+  const addKey = () => {
+    if (!newKey.trim() || !newName.trim()) return;
+    const updated = [...keys, { id: Date.now(), name: newName, key: newKey, created: new Date().toISOString() }];
+    setKeys(updated);
+    localStorage.setItem("mcp_keys", JSON.stringify(updated));
+    setNewKey(""); setNewName("");
+    notify("success", "Key added", `"${newName}" added to key store`);
+  };
+
+  const removeKey = (id) => {
+    const updated = keys.filter(k => k.id !== id);
+    setKeys(updated);
+    localStorage.setItem("mcp_keys", JSON.stringify(updated));
+    notify("info", "Key removed", "Key deleted from local store");
+  };
+
+  const copyKey = (k) => {
+    navigator.clipboard.writeText(k.key).catch(()=>{});
+    notify("success", "Copied!", `"${k.name}" key copied to clipboard`);
+  };
+
+  return (
+    <div style={{ padding:24, height:"calc(100vh - 101px)", overflowY:"auto" }}>
+      <div style={{ maxWidth:600 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>API Keys</div>
+        <div style={{ fontSize:13, color:COLORS.textMuted, marginBottom:24 }}>Manage API keys for accessing your gateway.</div>
+
+        {/* Existing keys */}
+        <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:24 }}>
+          {keys.map(k => (
+            <div key={k.id} className="card" style={{ padding:"14px 16px" }}>
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:10 }}>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:600, marginBottom:4 }}>{k.name}</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                    <span className="mono" style={{ fontSize:11, color:COLORS.textMuted, background:COLORS.bg, padding:"2px 8px", borderRadius:4, border:`1px solid ${COLORS.border}` }}>
+                      {showKeys[k.id] ? k.key : k.key.slice(0,6)+"••••••••••••"+k.key.slice(-4)}
+                    </span>
+                    <button onClick={()=>setShowKeys(p=>({...p,[k.id]:!p[k.id]}))} style={{background:"transparent",border:"none",cursor:"pointer",color:COLORS.textMuted,fontSize:12,padding:0}}>
+                      {showKeys[k.id]?"🙈":"👁"}
+                    </button>
+                  </div>
+                  <div style={{ fontSize:10, color:COLORS.textDim, marginTop:4 }}>
+                    Created: {new Date(k.created).toLocaleDateString()}
+                  </div>
+                </div>
+                <div style={{ display:"flex", gap:6, flexShrink:0 }}>
+                  <button className="btn btn-ghost" onClick={()=>copyKey(k)} style={{padding:"4px 10px",fontSize:11}}>Copy</button>
+                  {keys.length > 1 && (
+                    <button className="btn btn-danger" onClick={()=>removeKey(k.id)} style={{padding:"4px 10px",fontSize:11}}>×</button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Add new key */}
+        <div className="card" style={{ padding:20 }}>
+          <div style={{ fontSize:12, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:14 }}>Add New Key</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            <div>
+              <div style={{ fontSize:10, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:4 }}>Name</div>
+              <input className="input" placeholder="e.g. Team A, CI/CD, John" value={newName} onChange={e=>setNewName(e.target.value)} />
+            </div>
+            <div>
+              <div style={{ fontSize:10, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:4 }}>API Key</div>
+              <div style={{ display:"flex", gap:8 }}>
+                <input className="input" placeholder="Paste or generate..." value={newKey} onChange={e=>setNewKey(e.target.value)} style={{flex:1}} />
+                <button className="btn btn-ghost" onClick={generateKey} style={{whiteSpace:"nowrap",fontSize:11}}>Generate</button>
+              </div>
+            </div>
+            <button className="btn btn-primary" onClick={addKey} disabled={!newKey.trim()||!newName.trim()} style={{width:"100%",justifyContent:"center",padding:"10px"}}>
+              Add Key →
+            </button>
+          </div>
+        </div>
+
+        <div style={{ marginTop:14, padding:"10px 14px", background:COLORS.surface, borderRadius:8, border:`1px solid ${COLORS.border}` }}>
+          <div style={{ fontSize:11, color:COLORS.textMuted, lineHeight:1.7 }}>
+            💡 Keys are stored locally. To activate a new key on the gateway — add it to <span style={{color:"#a5b4fc",fontFamily:"JetBrains Mono,monospace"}}>MCP_API_KEYS</span> in your <span style={{color:"#a5b4fc",fontFamily:"JetBrains Mono,monospace"}}>.env</span> (comma-separated).
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Logs Tab ───────────────────────────────────────────────────────────────────
 function LogsTab({ apiKey, t = T.en }) {
+  const [statusFilter, setStatusFilter] = useState("all"); // all | ok | err
   const [logs, setLogs]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter]   = useState("");
@@ -866,9 +1236,11 @@ function LogsTab({ apiKey, t = T.en }) {
   useEffect(() => { fetchLogs(); const t = setInterval(fetchLogs, 5000); return () => clearInterval(t); }, []);
   useEffect(() => { if (ref.current) ref.current.scrollTop = ref.current.scrollHeight; }, [logs]);
 
-  const filtered = filter
-    ? logs.filter(l => l.server?.includes(filter) || l.tool?.includes(filter) || l.api_key?.includes(filter))
-    : logs;
+  const filtered = logs.filter(l => {
+    const matchText = !filter || l.server?.includes(filter) || l.tool?.includes(filter) || l.api_key?.includes(filter);
+    const matchStatus = statusFilter === "all" || (statusFilter === "ok" && l.success) || (statusFilter === "err" && !l.success);
+    return matchText && matchStatus;
+  });
 
   const stats = {
     total: logs.length,
@@ -889,9 +1261,17 @@ function LogsTab({ apiKey, t = T.en }) {
       </div>
 
       {/* Filter + Refresh */}
-      <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-        <input className="input" placeholder={t.filterPlaceholder} value={filter} onChange={e=>setFilter(e.target.value)} style={{flex:1}} />
+      <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+        <input className="input" placeholder={t.filterPlaceholder} value={filter} onChange={e=>setFilter(e.target.value)} style={{flex:1,minWidth:180}} />
+        {["all","ok","err"].map(s=>(
+          <button key={s} className={`btn ${statusFilter===s?"btn-primary":"btn-ghost"}`}
+            onClick={()=>setStatusFilter(s)}
+            style={{padding:"6px 12px",fontSize:11}}>
+            {s==="all"?"All":s==="ok"?"✅ OK":"❌ Err"}
+          </button>
+        ))}
         <button className="btn btn-ghost" onClick={fetchLogs} style={{whiteSpace:"nowrap"}}>{t.refresh}</button>
+        <button className="btn btn-ghost" onClick={()=>exportLogsCSV(filtered)} style={{whiteSpace:"nowrap",fontSize:11}}>⬇ CSV</button>
       </div>
 
       {/* Log list */}
@@ -1046,7 +1426,7 @@ function CustomTab({ apiKey, onAdded, t = T.en }) {
 }
 
 // ── Servers Panel ──────────────────────────────────────────────────────────────
-function ServersPanel({ servers, selected, onSelect }) {
+function ServersPanel({ servers, selected, onSelect, health = {} }) {
   const categories = {
     qa: servers.filter(s => ["jira","testrail","pytest-runner","xray","zephyr","allure-reporter","bdd-generator","selenium"].includes(s.name)),
     dev: servers.filter(s => ["github","git-local","azure-devops","code-runner"].includes(s.name)),
@@ -1062,7 +1442,10 @@ function ServersPanel({ servers, selected, onSelect }) {
               <div key={s.name} onClick={()=>onSelect(s)} className="card"
                 style={{ padding:"10px 14px", marginBottom:4, cursor:"pointer", borderColor:selected?.name===s.name?COLORS.accent:COLORS.border, background:selected?.name===s.name?COLORS.accentGlow:COLORS.surface }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <span style={{fontSize:13,fontWeight:600}}>{s.name}</span>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}>
+                    <div style={{width:6,height:6,borderRadius:"50%",flexShrink:0,background:health[s.name]===true?COLORS.success:health[s.name]===false?COLORS.danger:COLORS.textDim}} title={health[s.name]===true?"Online":health[s.name]===false?"Offline":"Unknown"}/>
+                    <span style={{fontSize:13,fontWeight:600}}>{s.name}</span>
+                  </div>
                   <span style={{fontSize:10,color:COLORS.textMuted,fontFamily:"JetBrains Mono, monospace"}}>{s.tools.length} tools</span>
                 </div>
                 <div style={{fontSize:11,color:COLORS.textMuted,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{s.description}</div>
@@ -1211,9 +1594,77 @@ export default function App() {
   const [status, setStatus]         = useState(null);
   const [logs, setLogs]             = useState([]);
   const [showAdd, setShowAdd]       = useState(false);
+  const [stats, setStats]           = useState({ total: 0, ok: 0, err: 0, running: 0 });
+  const [notifs, setNotifs]         = useState([]);
+  const [serverHealth, setServerHealth] = useState({});
+
+  const notify = (type, title, message, duration=4000) => {
+    const id = Date.now() + Math.random();
+    setNotifs(p => [...p.slice(-4), { id, type, title, message }]);
+    setTimeout(() => setNotifs(p => p.filter(n => n.id !== id)), duration);
+  };
+
+  const checkServerHealth = async () => {
+    try {
+      const r = await fetch(`${API_BASE}/v1/servers`, { headers: { "X-API-Key": apiKey } });
+      if (r.ok) {
+        const srvs = await r.json();
+        const health = {};
+        await Promise.allSettled(srvs.map(async s => {
+          try {
+            const r2 = await fetch(s.url + "/health", { signal: AbortSignal.timeout(2000) });
+            health[s.name] = r2.ok;
+          } catch {
+            health[s.name] = false;
+          }
+        }));
+        setServerHealth(health);
+      }
+    } catch {}
+  };
+
+  const loadStats = async () => {
+    try {
+      const [logsRes, serversRes] = await Promise.all([
+        fetch(`${API_BASE}/v1/logs?limit=1000`, { headers: { "X-API-Key": apiKey } }),
+        fetch(`${API_BASE}/v1/servers`, { headers: { "X-API-Key": apiKey } }),
+      ]);
+      if (logsRes.ok) {
+        const logs = await logsRes.json();
+        const today = new Date().toDateString();
+        const todayLogs = logs.filter(l => new Date(l.timestamp).toDateString() === today);
+        setStats(s => ({
+          ...s,
+          total: todayLogs.length,
+          ok: todayLogs.filter(l => l.success).length,
+          err: todayLogs.filter(l => !l.success).length,
+        }));
+      }
+      if (serversRes.ok) {
+        const srvs = await serversRes.json();
+        setStats(s => ({ ...s, running: srvs.length }));
+      }
+    } catch {}
+  };
   const [activeTab, setActiveTab]   = useState("setup");
   const [lang, setLang]             = useState(() => localStorage.getItem("mcp_lang") || null);
   const [splashDone, setSplashDone] = useState(false);
+  const [dark, setDark]             = useState(() => localStorage.getItem("mcp_theme") !== "light");
+
+  const toggleTheme = () => {
+    const next = !dark;
+    setDark(next);
+    localStorage.setItem("mcp_theme", next ? "dark" : "light");
+  };
+
+  // Dynamic colors based on theme
+  const C = dark ? {
+    bg: "#0a0a0f", surface: "#13131a", border: "#1e1e2e", borderHover: "#2e2e4e",
+    text: "#e2e8f0", textMuted: "#64748b", textDim: "#334155",
+  } : {
+    bg: "#f8fafc", surface: "#ffffff", border: "#e2e8f0", borderHover: "#cbd5e1",
+    text: "#0f172a", textMuted: "#64748b", textDim: "#94a3b8",
+  };
 
   const t = T[lang] || T.en;
   const isRtl = lang === "ar";
@@ -1235,7 +1686,17 @@ export default function App() {
     try { const r = await fetch(`${API_BASE}/status`); if (r.ok) setStatus(await r.json()); } catch {}
   };
 
-  useEffect(() => { if (authed) { loadServers(); loadStatus(); } }, [authed]);
+  useEffect(() => {
+    if (authed) {
+      loadServers();
+      loadStatus();
+      loadStats();
+      const t = setInterval(loadStats, 10000);
+      const t2 = setInterval(checkServerHealth, 15000);
+      checkServerHealth();
+      return () => { clearInterval(t); clearInterval(t2); };
+    }
+  }, [authed]);
 
   useEffect(() => {
     const tryConnect = async () => {
@@ -1273,20 +1734,25 @@ export default function App() {
   return (
     <>
       <style>{css}</style>
-      <div style={{ minHeight:"100vh", display:"flex", flexDirection:"column", direction: isRtl?"rtl":"ltr" }}>
-        <StatusBar apiKey={apiKey} status={status} onChangeLang={()=>{localStorage.removeItem("mcp_lang");setLang(null);}} />
+      <div className={dark?"theme-dark":"theme-light"} style={{ minHeight:"100vh", display:"flex", flexDirection:"column", direction: isRtl?"rtl":"ltr", background: dark?"#0a0a0f":"#f8fafc", color: dark?"#e2e8f0":"#0f172a" }}>
+        <StatusBar apiKey={apiKey} status={status} dark={dark} onChangeLang={()=>{localStorage.removeItem("mcp_lang");setLang(null);}} />
 
         <div className="nav-tab-bar" style={{direction: isRtl?"rtl":"ltr"}}>
           <div className={`nav-tab ${activeTab==="setup"?"active":""}`}     onClick={()=>setActiveTab("setup")}>{t.quickSetup}</div>
           <div className={`nav-tab ${activeTab==="dashboard"?"active":""}`} onClick={()=>setActiveTab("dashboard")}>{t.dashboard}</div>
           <div className={`nav-tab ${activeTab==="logs"?"active":""}`}      onClick={()=>setActiveTab("logs")}>{t.logs}</div>
           <div className={`nav-tab ${activeTab==="custom"?"active":""}`}    onClick={()=>setActiveTab("custom")}>{t.customTab}</div>
-          <div className="nav-tab" onClick={()=>{localStorage.removeItem("mcp_lang");setLang(null);}} style={{marginLeft:"auto",fontSize:11}}>🌐</div>
+          <div className={`nav-tab ${activeTab==="keys"?"active":""}`}      onClick={()=>setActiveTab("keys")}>🔑 Keys</div>
+          <div className={`nav-tab ${activeTab==="settings"?"active":""}`}  onClick={()=>setActiveTab("settings")}>⚙️ Settings</div>
+          <div className="nav-tab" onClick={()=>{localStorage.removeItem("mcp_lang");setLang(null);}} style={{marginLeft:"auto",fontSize:13}}>🌐</div>
+          <div className="nav-tab" onClick={toggleTheme} style={{fontSize:13}} title="Toggle theme">{dark ? "☀️" : "🌙"}</div>
         </div>
 
-        {activeTab === "setup"     && <QuickSetup apiKey={apiKey} t={t} isRtl={isRtl} />}
-        {activeTab === "logs"      && <LogsTab apiKey={apiKey} t={t} />}
-        {activeTab === "custom"    && <CustomTab apiKey={apiKey} onAdded={loadServers} t={t} />}
+        <div style={{display: activeTab==="setup"?"block":"none"}}><QuickSetup apiKey={apiKey} t={t} isRtl={isRtl} notify={notify} /></div>
+        <div style={{display: activeTab==="logs"?"block":"none"}}><LogsTab apiKey={apiKey} t={t} /></div>
+        <div style={{display: activeTab==="custom"?"block":"none"}}><CustomTab apiKey={apiKey} onAdded={loadServers} t={t} notify={notify} /></div>
+        <div style={{display: activeTab==="keys"?"block":"none"}}><KeysTab apiKey={apiKey} notify={notify} /></div>
+        <div style={{display: activeTab==="settings"?"block":"none"}}><SettingsTab apiKey={apiKey} notify={notify} /></div>
 
         {activeTab === "dashboard" && (
           <div style={{ display:"grid", gridTemplateColumns:"260px 1fr", flex:1 }}>
@@ -1295,12 +1761,12 @@ export default function App() {
                 <div style={{ fontSize:11, fontWeight:700, color:COLORS.textMuted, textTransform:"uppercase", letterSpacing:"0.08em" }}>{t.servers} ({servers.length})</div>
                 <button className="btn btn-ghost" onClick={()=>setShowAdd(true)} style={{padding:"3px 8px",fontSize:11}}>{t.addServer}</button>
               </div>
-              <ServersPanel servers={servers} selected={selected} onSelect={setSelected} />
+              <ServersPanel servers={servers} selected={selected} onSelect={setSelected} health={serverHealth} />
             </div>
             <div style={{ padding:24, overflowY:"auto", height:"calc(100vh - 101px)", display:"flex", flexDirection:"column", gap:20 }}>
               {status && (
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }}>
-                  {[{label:t.servers,value:status.servers_registered,color:COLORS.accent},{label:t.healthy,value:status.servers_healthy,color:COLORS.success},{label:t.callsToday,value:logs.length,color:COLORS.warning}].map(s=>(
+                  {[{label:t.servers,value:stats.running||status.servers_registered,color:COLORS.accent},{label:t.healthy,value:status.servers_healthy,color:COLORS.success},{label:t.callsToday,value:stats.total,color:COLORS.warning}].map(s=>(
                     <div key={s.label} className="card" style={{padding:"16px 20px"}}>
                       <div style={{fontSize:28,fontWeight:800,color:s.color,letterSpacing:"-0.02em"}}>{s.value}</div>
                       <div style={{fontSize:12,color:COLORS.textMuted,marginTop:2}}>{s.label}</div>
@@ -1308,7 +1774,12 @@ export default function App() {
                   ))}
                 </div>
               )}
-              {selected ? <ToolRunner server={selected} apiKey={apiKey} onLog={addLog} /> : (
+              {selected ? (
+                <>
+                  <ServerDetails server={selected} apiKey={apiKey} health={serverHealth} notify={notify} />
+                  <ToolRunner server={selected} apiKey={apiKey} onLog={addLog} />
+                </>
+              ) : (
                 <div className="card fade-in" style={{padding:40,textAlign:"center",color:COLORS.textMuted}}>
                   <div style={{fontSize:32,marginBottom:12}}>←</div>
                   <div style={{fontSize:14}}>{t.selectServer}</div>
@@ -1320,6 +1791,7 @@ export default function App() {
         )}
       </div>
       {showAdd && <AddServerModal apiKey={apiKey} onClose={()=>setShowAdd(false)} onAdded={loadServers} />}
+      <NotificationContainer notifications={notifs} />
     </>
   );
 }
