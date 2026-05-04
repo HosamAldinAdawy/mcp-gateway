@@ -923,6 +923,37 @@ function SettingsTab({ apiKey, notify = ()=>{} }) {
       .catch(() => setLoaded(true));
   }, []);
 
+  const restart = async () => {
+    setLoading(true);
+    try {
+      // Save first then restart
+      const credentials = {
+        PORT: form.port,
+        RATE_LIMIT_PER_MINUTE: form.rate_limit,
+        ALLOWED_ORIGINS: form.cors_origins,
+        LOG_LEVEL: form.log_level,
+      };
+      await fetch(`${API_BASE}/v1/setup`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey, "Content-Type": "application/json" },
+        body: JSON.stringify({ server: "_settings", credentials }),
+      });
+      // Call restart endpoint
+      const r = await fetch(`${API_BASE}/v1/restart`, {
+        method: "POST",
+        headers: { "X-API-Key": apiKey },
+      });
+      notify("success", "Restarting... ↺", "Gateway will restart in 2 seconds — reconnecting");
+      // Wait then reload page
+      setTimeout(() => window.location.reload(), 3000);
+    } catch {
+      // Gateway restarted — reload anyway
+      notify("success", "Restarting... ↺", "Reconnecting in 3 seconds");
+      setTimeout(() => window.location.reload(), 3000);
+    }
+    setLoading(false);
+  };
+
   const save = async () => {
     setLoading(true);
     try {
@@ -974,8 +1005,12 @@ function SettingsTab({ apiKey, notify = ()=>{} }) {
 
             <div style={{ borderTop:`1px solid ${COLORS.border}`, paddingTop:16, display:"flex", gap:10 }}>
               <button className="btn btn-primary" onClick={save} disabled={loading}
-                style={{ flex:1, justifyContent:"center", padding:"10px" }}>
+                style={{ flex:2, justifyContent:"center", padding:"10px" }}>
                 {loading ? <><div className="spinner"/> Saving...</> : "Save Settings →"}
+              </button>
+              <button className="btn btn-ghost" onClick={restart} disabled={loading}
+                style={{ flex:1, justifyContent:"center", padding:"10px", color:COLORS.warning, borderColor:COLORS.warning }}>
+                {loading ? <><div className="spinner"/> ...</> : "↺ Restart"}
               </button>
             </div>
           </div>
