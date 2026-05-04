@@ -764,13 +764,15 @@ function QuickSetup({ apiKey, t = T.en, isRtl = false }) {
     if (!selected) return "";
     if (mode === "cursor")
       return JSON.stringify({ mcpServers: { [selected.id]: { url: `${API_BASE}/mcp`, headers: { "X-API-Key": apiKey } } } }, null, 2);
-    return JSON.stringify({ mcpServers: { [selected.id]: { command: "npx", args: ["-y", "@modelcontextprotocol/server-proxy", `${API_BASE}/mcp`], env: { X_API_KEY: apiKey } } } }, null, 2);
+    return JSON.stringify({ mcpServers: { [selected.id]: { url: `${API_BASE}/mcp`, headers: { "X-API-Key": apiKey } } } }, null, 2);
   };
 
   const configText = buildConfig(outputMode);
   const configHint = outputMode === "cursor"
     ? "Add it to .cursor/mcp.json in your project folder"
-    : "Add it to ~/Library/Application Support/Claude/claude_desktop_config.json";
+    : lang === "ar"
+      ? "حطّه في %APPDATA%\\Claude\\claude_desktop_config.json (Windows) أو ~/Library/Application Support/Claude/claude_desktop_config.json (Mac)"
+      : "Add it to %APPDATA%\\Claude\\claude_desktop_config.json (Windows) or ~/Library/Application Support/Claude/claude_desktop_config.json (Mac)";
 
   const copyConfig = () => { navigator.clipboard.writeText(configText).catch(()=>{}); setCopied(true); setTimeout(()=>setCopied(false),1500); };
 
