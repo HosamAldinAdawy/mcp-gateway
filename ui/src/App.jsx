@@ -770,9 +770,17 @@ function QuickSetup({ apiKey, t = T.en, isRtl = false, notify = ()=>{} }) {
     selenium_headless:"SELENIUM_HEADLESS", repo_path:"GIT_REPO_PATH",
   };
 
+  const NEEDS_INSTALL = ["selenium","playwright","google-sheets","database"];
+
   const connect = async () => {
     if (!selected) return;
     setConnecting(true); setServerStatus(null); setServerMsg("");
+
+    const needsInstall = NEEDS_INSTALL.includes(selected.id);
+    if (needsInstall) {
+      notify("info", `Installing ${selected.name} dependencies...`, "This may take 30–60 seconds on first run");
+    }
+
     const credentials = {};
     selected.creds.forEach(c => {
       const envKey = ENV_MAP[c.key] || c.key.toUpperCase();
@@ -788,7 +796,7 @@ function QuickSetup({ apiKey, t = T.en, isRtl = false, notify = ()=>{} }) {
       if (r.ok && data.started) {
         setServerStatus("ok");
         setServerMsg(`${selected.name} server started — ready`);
-        notify("success", `${selected.name} started ✅`, `Running on port — ready to use`);
+        notify("success", `${selected.name} started ✅`, `Running — ready to use in Cursor`);
       } else {
         setServerStatus("error");
         setServerMsg(data.message || "Failed to start server");
@@ -875,7 +883,7 @@ function QuickSetup({ apiKey, t = T.en, isRtl = false, notify = ()=>{} }) {
                 })}
               </div>
             </div>
-            <button className="btn btn-primary" onClick={connect} disabled={connecting||(selected.creds.length>0&&!allFilled())} style={{width:"100%",justifyContent:"center",padding:"11px"}}>{connecting?<><div className="spinner"/> {t.connecting}</>:t.generateConfig}</button>
+            <button className="btn btn-primary" onClick={connect} disabled={connecting||(selected.creds.length>0&&!allFilled())} style={{width:"100%",justifyContent:"center",padding:"11px"}}>{connecting?(NEEDS_INSTALL.includes(selected?.id)?<><div className="spinner"/> Installing dependencies...</>:<><div className="spinner"/> {t.connecting}</>):t.generateConfig}</button>
             {serverStatus && (
               <div className="fade-in" style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 12px", background: serverStatus==="ok"?"rgba(34,197,94,0.06)":"rgba(239,68,68,0.06)", border:`1px solid ${serverStatus==="ok"?"rgba(34,197,94,0.2)":"rgba(239,68,68,0.2)"}`, borderRadius:6 }}>
                 <div style={{ width:6, height:6, borderRadius:"50%", background: serverStatus==="ok"?COLORS.success:COLORS.danger, flexShrink:0 }}/>
