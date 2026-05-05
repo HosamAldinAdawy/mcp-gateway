@@ -254,3 +254,25 @@ async def restart_gateway(api_key: str = Depends(require_api_key)):
 
     threading.Thread(target=do_restart, daemon=True).start()
     return {"message": "Restarting gateway..."}
+
+
+@router.get("/check-update")
+async def check_update(api_key: str = Depends(require_api_key)):
+    """Check GitHub for a newer version."""
+    try:
+        from gateway.analytics import check_for_update
+        result = check_for_update()
+        return result or {"up_to_date": True}
+    except Exception as e:
+        return {"up_to_date": True, "error": str(e)}
+
+
+@router.post("/track")
+async def track_event(req: dict, api_key: str = Depends(require_api_key)):
+    """Track a UI event (template connected, etc)."""
+    try:
+        from gateway.analytics import _track
+        _track(req.get("event", "ui_event"), req.get("props", {}))
+    except Exception:
+        pass
+    return {"ok": True}
