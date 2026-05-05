@@ -585,6 +585,12 @@ function StatusBar({ apiKey, status, dark = true, onChangeLang }) {
             <span className="mono">{status.servers_healthy}/{status.servers_registered} servers</span>
           </div>
         )}
+        {updateInfo && (
+          <a href={updateInfo.url} target="_blank" rel="noreferrer"
+            style={{ display:"flex", alignItems:"center", gap:6, background:"rgba(99,102,241,.15)", border:"1px solid rgba(99,102,241,.3)", borderRadius:6, padding:"3px 10px", fontSize:11, color:"#818cf8", textDecoration:"none" }}>
+            ↑ v{updateInfo.version} available
+          </a>
+        )}
         {apiKey && (
           <div style={{ display:"flex", alignItems:"center", gap:4 }}>
             <span className="mono" style={{ fontSize: 11, color: COLORS.textMuted, background: COLORS.bg, padding: "4px 10px", borderRadius: 6, border: `1px solid ${COLORS.border}`, letterSpacing: showKey?".02em":".1em", transition:"all .2s" }}>
@@ -1638,6 +1644,7 @@ export default function App() {
   const [logs, setLogs]             = useState([]);
   const [showAdd, setShowAdd]       = useState(false);
   const [stats, setStats]           = useState({ total: 0, ok: 0, err: 0, running: 0 });
+  const [updateInfo, setUpdateInfo] = useState(null);
   const [notifs, setNotifs]         = useState([]);
   const [serverHealth, setServerHealth] = useState({});
 
@@ -1734,6 +1741,11 @@ export default function App() {
       loadServers();
       loadStatus();
       loadStats();
+      // Check for updates
+      fetch(`${API_BASE}/v1/check-update`, { headers: { "X-API-Key": apiKey } })
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d && d.version) setUpdateInfo(d); })
+        .catch(() => {});
       const t = setInterval(loadStats, 10000);
       const t2 = setInterval(checkServerHealth, 15000);
       checkServerHealth();
