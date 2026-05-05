@@ -1,17 +1,48 @@
 """
 MCP Gateway — Embedded Server Manager
 Automatically starts MCP servers based on credentials in .env
+Lazy-installs missing packages before starting servers that need them.
 """
 import os
+import sys
 import threading
 import logging
-from pathlib import Path
+import subprocess
 
 log = logging.getLogger("server_manager")
 
 _started = set()
 
 
+# ── Lazy package installer ────────────────────────────────────────────────────
+def _ensure_packages(*packages):
+    """Install packages if not already available. Returns True if all ready."""
+    missing = []
+    for pkg in packages:
+        module = pkg.split("[")[0].replace("-", "_")
+        try:
+            __import__(module)
+        except ImportError:
+            missing.append(pkg)
+
+    if not missing:
+        return True
+
+    print(f"\n[server_manager] Installing: {', '.join(missing)} ...")
+    try:
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", "--quiet", *missing],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        print(f"[server_manager] ✅ Installed: {', '.join(missing)}")
+        return True
+    except Exception as e:
+        log.warning(f"[server_manager] Failed to install {missing}: {e}")
+        return False
+
+
+# ── Server runner ─────────────────────────────────────────────────────────────
 def _run_server(app, port: int, name: str):
     try:
         import uvicorn
@@ -29,131 +60,164 @@ def _start(app, port: int, name: str):
     log.info(f"[{name}] started on :{port}")
 
 
+# ── Per-server start ──────────────────────────────────────────────────────────
 def start_server(name: str) -> bool:
-    """Start a single server by name. Called from /setup endpoint."""
+    """Start a single server by name. Lazy-installs dependencies if needed."""
     if name in _started:
         return True
+
     try:
+        # ── QA ────────────────────────────────────────────────────────────────
         if name == "jira":
             from templates.qa.jira_server import app; _start(app, 8101, name)
+
         elif name == "testrail":
             from templates.qa.testrail_server import app; _start(app, 8102, name)
+
         elif name == "pytest-runner":
             from templates.qa.pytest_server import app; _start(app, 8103, name)
+
         elif name == "xray":
             from templates.qa.xray_server import app; _start(app, 8106, name)
+
         elif name == "playwright":
+            if not _ensure_packages("playwright"):
+                return False
+            # Install browsers on first use
+            try:
+                subprocess.run(
+                    [sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"],
+                    capture_output=True, timeout=120
+                )
+            except Exception:
+                pass
             from templates.qa.playwright_server import app; _start(app, 8107, name)
+
         elif name == "allure":
             from templates.qa.allure_server import app; _start(app, 8108, name)
+
         elif name == "selenium":
+            if not _ensure_packages("selenium", "webdriver-manager"):
+                return False
             from templates.qa.selenium_server import app; _start(app, 8110, name)
+
+        # ── Dev ───────────────────────────────────────────────────────────────
         elif name == "github":
             from templates.dev.github_server import app; _start(app, 8201, name)
+
         elif name == "git-local":
             from templates.dev.git_server import app; _start(app, 8202, name)
+
         elif name == "azure-devops":
             from templates.dev.azure_devops_server import app; _start(app, 8203, name)
+
         elif name == "code-runner":
             from templates.dev.code_runner_server import app; _start(app, 8204, name)
+
         elif name == "confluence":
             from templates.dev.confluence_server import app; _start(app, 8205, name)
+
         elif name == "linear":
             from templates.dev.linear_server import app; _start(app, 8206, name)
+
         elif name == "gitlab":
             from templates.dev.gitlab_server import app; _start(app, 8207, name)
+
+        # ── General ───────────────────────────────────────────────────────────
         elif name == "slack":
             from templates.general.slack_server import app; _start(app, 8301, name)
+
         elif name == "filesystem":
             from templates.general.filesystem_server import app; _start(app, 8302, name)
+
         elif name == "rest-api":
             from templates.general.rest_api_server import app; _start(app, 8303, name)
+
         elif name == "web-search":
             from templates.general.web_search_server import app; _start(app, 8304, name)
+
+        elif name == "database":
+            if not _ensure_packages("sqlalchemy"):
+                return False
+            from templates.general.database_server import app; _start(app, 8305, name)
+
         elif name == "notion":
             from templates.general.notion_server import app; _start(app, 8307, name)
+
         elif name == "asana":
             from templates.general.asana_server import app; _start(app, 8308, name)
+
         elif name == "google-sheets":
+            if not _ensure_packages("gspread", "google-auth"):
+                return False
             from templates.general.google_sheets_server import app; _start(app, 8309, name)
+
         elif name == "figma":
             from templates.general.figma_server import app; _start(app, 8310, name)
+
         else:
             return False
+
         return True
+
     except Exception as e:
         log.warning(f"[{name}] failed to start: {e}")
         return False
 
 
+# ── Start all servers based on .env ──────────────────────────────────────────
 def start_all():
     """Start all servers whose credentials are present in .env"""
     started = []
 
+    def try_start(name):
+        if start_server(name):
+            started.append(name)
+
+    # QA
     if os.getenv("JIRA_URL") and os.getenv("JIRA_TOKEN") and os.getenv("JIRA_EMAIL"):
-        if start_server("jira"): started.append("jira")
-
+        try_start("jira")
     if os.getenv("TESTRAIL_URL") and os.getenv("TESTRAIL_KEY") and os.getenv("TESTRAIL_USER"):
-        if start_server("testrail"): started.append("testrail")
-
-    if start_server("pytest-runner"): started.append("pytest-runner")
-
+        try_start("testrail")
     if os.getenv("XRAY_CLIENT_ID") and os.getenv("XRAY_CLIENT_SECRET"):
-        if start_server("xray"): started.append("xray")
-
+        try_start("xray")
     if os.getenv("PLAYWRIGHT_PROJECT_PATH"):
-        if start_server("playwright"): started.append("playwright")
-
+        try_start("playwright")
     if os.getenv("ALLURE_RESULTS_DIR"):
-        if start_server("allure"): started.append("allure")
+        try_start("allure")
+    try_start("pytest-runner")
+    try_start("selenium")
 
-    if start_server("selenium"): started.append("selenium")
-
+    # Dev
     if os.getenv("GITHUB_TOKEN"):
-        if start_server("github"): started.append("github")
-
-    if start_server("git-local"): started.append("git-local")
-
-    if os.getenv("AZURE_TOKEN") and os.getenv("AZURE_ORG"):
-        if start_server("azure-devops"): started.append("azure-devops")
-
-    if start_server("code-runner"): started.append("code-runner")
-
-    if os.getenv("CONFLUENCE_URL") and os.getenv("CONFLUENCE_TOKEN"):
-        if start_server("confluence"): started.append("confluence")
-
-    if os.getenv("LINEAR_API_KEY"):
-        if start_server("linear"): started.append("linear")
-
+        try_start("github")
     if os.getenv("GITLAB_TOKEN"):
-        if start_server("gitlab"): started.append("gitlab")
+        try_start("gitlab")
+    if os.getenv("AZURE_TOKEN") and os.getenv("AZURE_ORG"):
+        try_start("azure-devops")
+    if os.getenv("CONFLUENCE_URL") and os.getenv("CONFLUENCE_TOKEN"):
+        try_start("confluence")
+    if os.getenv("LINEAR_API_KEY"):
+        try_start("linear")
+    try_start("git-local")
+    try_start("code-runner")
 
+    # General
     if os.getenv("SLACK_TOKEN"):
-        if start_server("slack"): started.append("slack")
-
-    if start_server("filesystem"): started.append("filesystem")
-    if start_server("rest-api"):   started.append("rest-api")
-    if start_server("web-search"): started.append("web-search")
-
+        try_start("slack")
     if os.getenv("NOTION_TOKEN"):
-        if start_server("notion"): started.append("notion")
-
+        try_start("notion")
     if os.getenv("ASANA_TOKEN"):
-        if start_server("asana"): started.append("asana")
-
+        try_start("asana")
     if os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON"):
-        if start_server("google-sheets"): started.append("google-sheets")
-
+        try_start("google-sheets")
     if os.getenv("FIGMA_TOKEN"):
-        if start_server("figma"): started.append("figma")
-
+        try_start("figma")
     if os.getenv("DATABASE_URL"):
-        try:
-            from templates.general.database_server import app as db_app
-            _start(db_app, 8305, "database")
-            started.append("database")
-        except Exception as e:
-            log.warning(f"[database] failed to import: {e}")
+        try_start("database")
+    try_start("filesystem")
+    try_start("rest-api")
+    try_start("web-search")
 
-    print(f"\n[server_manager] Started {len(started)} embedded servers: {', '.join(started) if started else 'none'}")
+    print(f"\n[server_manager] Started {len(started)} servers: {', '.join(started) if started else 'none'}")
     return started
