@@ -26,6 +26,13 @@ STATIC_DIR = Path(__file__).parent / "static"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Analytics
+    try:
+        from gateway.analytics import track_launch, check_for_update_async
+        track_launch()
+    except Exception:
+        pass
+
     # Start embedded MCP servers based on .env credentials
     try:
         from gateway.server_manager import start_all
