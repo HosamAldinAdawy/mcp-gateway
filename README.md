@@ -1,52 +1,35 @@
-#HosamAldinAdawy
 # MCP Gateway
 
-> Secure local MCP gateway — auth, audit, registry, and 22 ready-made templates.
-> Double-click to start. No terminal needed.
+**Control Your MCP**
 
 ---
 
-## The Problem
+Every time you connect Cursor or Claude to Jira, GitHub, or any external tool — your credentials sit on your machine in plain text, and nothing monitors what happens. Any tool call goes through. Nothing is logged.
 
-Companies don't trust remote MCP servers. Not because the code is bad — because there's no auth standard, no visibility into what happens, and no way to control which servers are allowed.
-
-So everyone runs everything locally with zero security layer.
-
-## The Solution
-
-MCP Gateway sits between your LLM and your MCP servers. Every tool call passes through it. Nothing runs unless it's in the registry.
-
-```
-Claude / Cursor / Any LLM
-         |
-    MCP Gateway
-  (Auth + Registry + Audit + Policy)
-         |
-  Jira | GitHub | Pytest | Notion | Slack | ...
-```
+MCP Gateway fixes that. It sits between your LLM and your MCP servers. Every request passes through it, gets verified, and gets logged. Your credentials stay inside the gateway. The LLM sees only the tools.
 
 ---
 
-## Start in 60 Seconds
+## Get started in 60 seconds
 
-### Option 1 — Desktop App (Recommended)
+### Desktop app — recommended
 
 1. Download `mcp-gateway.exe` (Windows) or `mcp-gateway-mac.zip` (Mac) from [Releases](../../releases)
-2. Double-click — browser opens automatically at `localhost:8000`
-3. Click **"Generate a new key"** → follow the 3 steps → connect
-4. Go to **Quick Setup** → pick a template → fill credentials → copy config to Cursor
+2. Double-click — the browser opens automatically
+3. The UI logs you in without asking for anything
+4. Go to **Quick Setup** → pick a template → fill in your credentials → copy the config to Cursor
 
-Done.
+That's it. Cursor is now talking to Jira.
 
-### Option 2 — pip install
+### pip install
 
 ```bash
 pip install mcp-gateway
-mcp-gateway init    # creates .env in current folder
-mcp-gateway start   # starts on :8000
+mcp-gateway init
+mcp-gateway start
 ```
 
-### Option 3 — from source
+### From source
 
 ```bash
 git clone https://github.com/HosamAldinAdawy/mcp-gateway.git
@@ -57,91 +40,71 @@ make run
 
 ---
 
-## Templates — 22 Ready to Use
+## The UI
 
-### QA Tools
-| Template | Tools |
-|---|---|
-| **Jira** | create_issue, search_issues, update_issue, get_issue, add_comment |
-| **TestRail** | get_test_cases, create_test_case, add_result, create_run |
-| **Xray** | get_test, create_test, get_test_plan, create_test_execution, update_test_run, import_results |
-| **Pytest** | run_tests, run_suite, get_coverage |
-| **Playwright** | run_tests, run_test_file, run_test_by_name, get_last_report, screenshot_url, list_tests |
-| **Allure** | generate_report, get_summary, get_failures, get_flaky_tests, get_trends |
+On first launch, a motion logo plays and you pick your language — English, Arabic, or French. After that, the dashboard opens directly. No login screen.
 
-### Dev Tools
-| Template | Tools |
-|---|---|
-| **GitHub** | create_issue, list_prs, merge_pr, create_branch, get_commits |
-| **GitLab** | create_issue, list_issues, create_merge_request, list_pipelines, trigger_pipeline, get_commits |
-| **Git Local** | status, diff, commit, log, branch, checkout |
-| **Azure DevOps** | create_work_item, get_pipeline, run_pipeline, get_test_plan |
-| **Confluence** | get_page, search_pages, create_page, update_page, list_spaces |
-| **Linear** | create_issue, search_issues, update_issue, list_teams, get_cycles, add_comment |
-| **Code Runner** | run_python, run_shell, run_javascript |
+There are six tabs:
 
-### General Tools
-| Template | Tools |
-|---|---|
-| **Slack** | send_message, list_channels, get_messages, create_channel |
-| **Notion** | get_page, search, create_page, update_page, query_database |
-| **Asana** | create_task, update_task, list_tasks, complete_task, add_comment |
-| **Google Sheets** | read_sheet, write_row, update_cell, append_rows, get_sheet_info |
-| **Figma** | get_file, get_comments, add_comment, get_components, get_image_urls |
-| **Filesystem** | read_file, write_file, search_files, list_dir |
-| **Database** | query, insert, update, list_tables |
-| **REST API** | get, post, put, patch, delete |
-| **Web Search** | search, fetch_page |
+**Quick Setup** — Pick a template, enter your credentials, hit "Connect & Generate config." The server starts automatically and the config is ready to paste into Cursor or Claude Desktop.
+
+**Dashboard** — Every server has a live 🟢/🔴 health dot. Today's call stats, a tool runner, and a one-click connection test per server.
+
+**Logs** — Full audit log with OK/Error filtering and CSV export.
+
+**Custom Server** — Register any server you're running locally and start it with a shell command directly from the UI.
+
+**🔑 Keys** — Add, delete, and manage API keys. Show or hide values at any time.
+
+**⚙️ Settings** — Change the port, rate limit, CORS origins, or log level without touching `.env`. A Restart button applies changes immediately.
 
 ---
 
-## Security Features
+## Templates
 
-| Feature | Details |
-|---|---|
-| API Key Auth | Every request requires X-API-Key header |
-| Registry Trust Store | Only servers in registry.json can be called |
-| Audit Logging | Every call logged to logs/audit.jsonl |
-| Policy Control | Control who can call which server and tool |
-| Rate Limiting | 60 requests/minute per key |
-| Docker Isolation | Non-root user in isolated network |
+**QA** — Jira · TestRail · Xray · Pytest · Playwright · Allure · Selenium
+
+**Dev** — GitHub · GitLab · Git Local · Azure DevOps · Confluence · Linear · Code Runner
+
+**General** — Slack · Notion · Asana · Google Sheets · Figma · Filesystem · Database · REST API · Web Search
 
 ---
 
-## Why Gateway Instead of Direct Remote MCP?
+## Why not connect directly?
 
-| | Direct Remote MCP | MCP Gateway |
+|  | Without Gateway | With Gateway |
 |---|---|---|
-| Credentials | Plain text on your machine | Inside gateway only |
-| Audit log | None | Every call logged |
-| Policy | None | Block any tool/server |
-| Team sharing | Each person sets up separately | One gateway, whole team |
-| Trust store | Any server connects | Only registry servers |
+| Credentials | Stored on every machine | Inside the gateway only |
+| Audit log | None | Every call recorded |
+| Policy | None | Block any tool or server |
+| Trust store | Any server can connect | Only registry servers |
+| Rate limiting | None | 60 requests/min per key |
+| Team sharing | Each person configures separately | One gateway for the whole team |
 
 ---
 
-## Integrations
+## Security
 
-- [Claude Desktop](docs/with-claude-desktop.md)
-- [Cursor](docs/with-cursor.md)
-- [Python SDK](docs/with-python-sdk.md)
+- **API key auth** — every request requires an `X-API-Key` header
+- **Registry trust store** — only servers listed in `registry.json` can be called
+- **Audit logging** — every call written to `logs/audit.jsonl` with timestamp, key, server, tool, and result
+- **Policy control** — restrict which keys can call which servers and tools
+- **Rate limiting** — 60 requests per minute per key by default
 
 ---
 
-## Commands
+## CLI
 
 ```bash
-mcp-gateway init          # create .env in current folder
-mcp-gateway start         # start on :8000
-mcp-gateway start --port 9000 --reload
-mcp-gateway list          # show registered servers
-mcp-gateway add --name jira --url http://localhost:8101 --tools create_issue,search_issues
+mcp-gateway init                   # create .env in current folder
+mcp-gateway start                  # start on :8000
+mcp-gateway start --port 9000      # custom port
+mcp-gateway list                   # list registered servers
+mcp-gateway add \
+  --name jira \
+  --url http://localhost:8101 \
+  --tools create_issue,search_issues
 mcp-gateway remove --name jira
-
-make setup                # interactive setup wizard
-make run                  # start with uvicorn
-make build-exe            # build desktop executable
-make logs                 # watch audit logs live
 ```
 
 ---
@@ -150,18 +113,16 @@ make logs                 # watch audit logs live
 
 ```
 mcp-gateway/
-├── launcher.py            ← desktop app entry point
-├── gateway/               ← FastAPI core
-├── registry/              ← trust store (registry.json)
-├── security/              ← auth, audit, policy, rate limiter
+├── launcher.py          ← desktop entry point, auto-starts servers from .env
+├── gateway/             ← FastAPI core + server manager
+├── registry/            ← trust store (registry.json)
+├── security/            ← auth, audit, policy, rate limiter
 ├── templates/
-│   ├── qa/                ← Jira, TestRail, Xray, Pytest, Playwright, Allure
-│   ├── dev/               ← GitHub, GitLab, Git, Azure, Confluence, Linear
-│   └── general/           ← Slack, Notion, Asana, Sheets, Figma, DB, REST
-├── ui/                    ← React web UI
-├── setup/wizard.py        ← interactive setup
-├── docs/                  ← integration guides
-└── infra/                 ← Docker setup
+│   ├── qa/              ← Jira, TestRail, Xray, Pytest, Playwright, Allure, Selenium
+│   ├── dev/             ← GitHub, GitLab, Git, Azure, Confluence, Linear, Code Runner
+│   └── general/         ← Slack, Notion, Asana, Sheets, Figma, Filesystem, DB, REST, Search
+├── ui/                  ← React — multilingual, dark/light mode
+└── infra/               ← Docker setup
 ```
 
 ---
