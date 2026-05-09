@@ -434,7 +434,7 @@ const T = {
 // ── Splash / Loading Screen ────────────────────────────────────────────────────
 function SplashScreen({ onDone }) {
   useEffect(() => {
-    const total = 4200;
+    const total = 1500;
     const t = setTimeout(onDone, total);
     return () => clearTimeout(t);
   }, []);
