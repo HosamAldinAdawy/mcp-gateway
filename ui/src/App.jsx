@@ -1783,7 +1783,7 @@ export default function App() {
   }, []);
 
   if (!splashDone) return (<><style>{css}</style><SplashScreen onDone={() => setSplashDone(true)} /></>);
-  if (!lang) return (<><style>{css}</style><LanguageScreen onSelect={selectLang} /></>);
+  if (!lang) return (<><style>{css}</style><LanguageScreen onSelect={selectLang} onSkip={()=>selectLang("en")} /></>);
   if (!authed) return (<><style>{css}</style><AuthScreen onAuth={auth} t={t} /></>);
 
   return (
