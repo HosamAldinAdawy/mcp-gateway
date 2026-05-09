@@ -51,6 +51,8 @@ def _get_ph():
         posthog.disabled = False
         _ph = posthog
     except ImportError:
+        if getattr(sys, "frozen", False):
+            return _ph
         try:
             import subprocess
             subprocess.check_call(
