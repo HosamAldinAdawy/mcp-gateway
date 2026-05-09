@@ -6,7 +6,9 @@ from typing import Optional
 
 from gateway.models import ServerInfo
 
-REGISTRY_PATH = Path(__file__).parent / "registry.json"
+import sys 
+_BASE = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent 
+REGISTRY_PATH = _BASE / "registry.json"
 
 
 def _load() -> dict:
