@@ -1790,7 +1790,7 @@ export default function App() {
     <>
       <style>{css}</style>
       <div className={dark?"theme-dark":"theme-light"} style={{ minHeight:"100vh", display:"flex", flexDirection:"column", direction: isRtl?"rtl":"ltr", background: dark?"#0a0a0f":"#f8fafc", color: dark?"#e2e8f0":"#0f172a" }}>
-        <StatusBar apiKey={apiKey} status={status} dark={dark} onChangeLang={()=>{localStorage.removeItem("mcp_lang");setLang(null);}} />
+                <StatusBar apiKey={apiKey} status={status} dark={dark} onChangeLang={()=>{localStorage.removeItem("mcp_lang");setLang(null);}} updateInfo={updateInfo} />
 
         <div className="nav-tab-bar" style={{direction: isRtl?"rtl":"ltr"}}>
           <div className={`nav-tab ${activeTab==="setup"?"active":""}`}     onClick={()=>setActiveTab("setup")}>{t.quickSetup}</div>
