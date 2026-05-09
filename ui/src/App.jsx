@@ -568,7 +568,7 @@ function LanguageScreen({ onSelect }) {
 
 
 // ── Status Bar ─────────────────────────────────────────────────────────────────
-function StatusBar({ apiKey, status, dark = true, onChangeLang }) {
+function StatusBar({ apiKey, status, dark = true, onChangeLang, updateInfo }) {
   const [showKey, setShowKey] = useState(false);
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 24px", borderBottom: `1px solid ${dark?"#1e1e2e":"#e2e8f0"}`, background: dark?"#0d0d14":"#ffffff" }}>
