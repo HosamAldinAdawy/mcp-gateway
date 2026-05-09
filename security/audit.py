@@ -1,9 +1,11 @@
 import json
 import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-LOG_PATH = Path(os.getenv("AUDIT_LOG_PATH", "logs/audit.jsonl"))
+_BASE = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent.parent
+LOG_PATH = Path(os.getenv("AUDIT_LOG_PATH", str(_BASE / "logs" / "audit.jsonl")))
 
 
 def _ensure_log_dir():
