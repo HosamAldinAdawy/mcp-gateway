@@ -3,7 +3,9 @@ import os
 from pathlib import Path
 from fastapi import HTTPException, status
 
-POLICY_PATH = Path(__file__).parent / "policy.json"
+import sys 
+_BASE = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent
+POLICY_PATH = _BASE / "policy.json"
 
 
 def _load_policy() -> dict:
