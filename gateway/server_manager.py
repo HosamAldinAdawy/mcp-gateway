@@ -28,6 +28,10 @@ def _ensure_packages(*packages):
     if not missing:
         return True
 
+    # When running as frozen EXE, packages are bundled — skip install
+    if getattr(sys, "frozen", False):
+        return True
+
     print(f"\n[server_manager] Installing: {', '.join(missing)} ...")
     try:
         subprocess.check_call(
@@ -35,7 +39,7 @@ def _ensure_packages(*packages):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        print(f"[server_manager] ✅ Installed: {', '.join(missing)}")
+        print(f"[server_manager] Installed: {', '.join(missing)}")
         return True
     except Exception as e:
         log.warning(f"[server_manager] Failed to install {missing}: {e}")
@@ -83,14 +87,14 @@ def start_server(name: str) -> bool:
         elif name == "playwright":
             if not _ensure_packages("playwright"):
                 return False
-            # Install browsers on first use
-            try:
-                subprocess.run(
-                    [sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"],
-                    capture_output=True, timeout=120
-                )
-            except Exception:
-                pass
+            if not getattr(sys, "frozen", False):
+                try:
+                    subprocess.run(
+                        [sys.executable, "-m", "playwright", "install", "chromium", "--with-deps"],
+                        capture_output=True, timeout=120
+                    )
+                except Exception:
+                    pass
             from templates.qa.playwright_server import app; _start(app, 8107, name)
 
         elif name == "allure":
