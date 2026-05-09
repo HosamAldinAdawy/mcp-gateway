@@ -1,39 +1,31 @@
 name: Build Executables
-
 on:
   release:
     types: [created]
   workflow_dispatch:
-
 jobs:
   build-windows:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-
       - name: Build UI
         run: |
           cd ui
           npm install
           npm run build
-
       - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
-          pip install pyinstaller pillow pystray
-
+          pip install pyinstaller pillow pystray selenium webdriver-manager playwright gspread google-auth sqlalchemy
       - name: Build EXE
         run: pyinstaller mcp-gateway.spec
-
       - name: Upload EXE as Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -44,33 +36,26 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - name: Build UI
         run: |
           cd ui
           npm install
           npm run build
-
       - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
-          pip install pyinstaller pillow pystray
-
+          pip install pyinstaller pillow pystray selenium webdriver-manager playwright gspread google-auth sqlalchemy
       - name: Build Mac binary
         run: pyinstaller mcp-gateway.spec
-
       - name: Zip
         run: zip -r dist/mcp-gateway-mac.zip dist/mcp-gateway
-
       - name: Upload Mac as Artifact
         uses: actions/upload-artifact@v4
         with:
@@ -81,34 +66,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - name: Build UI
         run: |
           cd ui
           npm install
           npm run build
-
       - name: Install Python dependencies
         run: |
           pip install -r requirements.txt
-          pip install pyinstaller pillow pystray
+          pip install pyinstaller pillow pystray selenium webdriver-manager playwright gspread google-auth sqlalchemy
           sudo apt-get install -y python3-xlib
-
       - name: Build Linux binary
         run: pyinstaller mcp-gateway.spec
-
       - name: Zip
         run: zip -r dist/mcp-gateway-linux.zip dist/mcp-gateway
-
       - name: Upload Linux as Artifact
         uses: actions/upload-artifact@v4
         with:
