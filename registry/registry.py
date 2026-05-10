@@ -1,14 +1,46 @@
 import json
 import os
+import sys
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 from gateway.models import ServerInfo
 
-import sys 
-_BASE = Path(sys.executable).parent if getattr(sys, "frozen", False) else Path(__file__).parent 
-REGISTRY_PATH = _BASE / "registry.json"
+
+# ── Paths ─────────────────────────────────────────────────────────────────────
+if getattr(sys, "frozen", False):
+    # In EXE: bundle is read-only, base dir is next to the EXE
+    BUNDLE_DIR = Path(sys._MEIPASS)
+    BASE_DIR   = Path(sys.executable).parent
+else:
+    BUNDLE_DIR = Path(__file__).parent
+    BASE_DIR   = Path(__file__).parent
+
+REGISTRY_PATH = BASE_DIR / "registry.json"
+
+
+# ── On first EXE run, copy the bundled registry.json to a writable location ──
+def _ensure_registry():
+    if REGISTRY_PATH.exists():
+        return
+    # Try common locations the bundle may have
+    candidates = [
+        BUNDLE_DIR / "registry" / "registry.json",
+        BUNDLE_DIR / "registry.json",
+    ]
+    for src in candidates:
+        if src.exists():
+            REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(src, REGISTRY_PATH)
+            return
+    # Fallback — create empty registry
+    REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    REGISTRY_PATH.write_text(json.dumps({"servers": []}, indent=2))
+
+
+_ensure_registry()
 
 
 def _load() -> dict:
@@ -21,9 +53,15 @@ def _save(data: dict):
         json.dump(data, f, indent=2)
 
 
+def _to_server_info(s: dict) -> ServerInfo:
+    """Build ServerInfo while ignoring extra fields not in the model."""
+    valid_fields = ServerInfo.model_fields.keys()
+    return ServerInfo(**{k: v for k, v in s.items() if k in valid_fields})
+
+
 def get_all_servers() -> list[ServerInfo]:
     data = _load()
-    return [ServerInfo(**s) for s in data["servers"]]
+    return [_to_server_info(s) for s in data["servers"]]
 
 
 def get_server(name: str) -> Optional[ServerInfo]:
@@ -56,7 +94,7 @@ def add_server(
     }
     data["servers"].append(entry)
     _save(data)
-    return ServerInfo(**entry)
+    return _to_server_info(entry)
 
 
 def remove_server(name: str) -> bool:
