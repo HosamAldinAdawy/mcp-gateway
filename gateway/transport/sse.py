@@ -4,24 +4,46 @@ SSE Transport Layer — بيخلي الـ gateway remote MCP server حقيقي.
 الـ MCP protocol بيستخدم SSE (Server-Sent Events) للـ remote communication.
 ده بيخلي Claude Desktop و Cursor يتكلموا مع الـ gateway مباشرة
 من غير ما يحتاجوا proxy أو bridge.
+
+Auth بيقبل الاتنين:
+- X-API-Key header (الطريقة المعيارية)
+- ?api_key= query param (لما الـ client مش بيدعم headers في SSE)
 """
+import os
 import json
 import uuid
-from typing import AsyncGenerator
+import asyncio
+from typing import AsyncGenerator, Optional
 
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, Request, Header, Query, HTTPException, status
 from sse_starlette.sse import EventSourceResponse
 
-from gateway.models import ToolCallRequest
 from gateway.proxy import call_tool
 from registry.registry import get_all_servers, get_server
-from security.auth import require_api_key
 from security.audit import log_call
 from security.policy import check_policy
 from security.rate_limiter import check_rate_limit
 
 mcp_router = APIRouter()
+
+
+# ── Flexible API key auth (header OR query param) ─────────────────────────────
+def _get_api_key(
+    x_api_key: Optional[str] = None,
+    api_key: Optional[str] = None,
+) -> str:
+    key = x_api_key or api_key
+    if not key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="API key required (X-API-Key header or ?api_key= query)",
+        )
+    valid_keys = {k.strip() for k in os.getenv("MCP_API_KEYS", "").split(",") if k.strip()}
+    if not valid_keys:
+        raise HTTPException(status_code=500, detail="No API keys configured on gateway")
+    if key not in valid_keys:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
+    return key
 
 
 def build_tools_list() -> list[dict]:
@@ -77,9 +99,10 @@ async def handle_mcp_message(message: dict, api_key: str) -> dict:
     # Call tool
     elif method == "tools/call":
         tool_full_name = params.get("name", "")
-        arguments = params.get("arguments", {}).get("arguments", {})
+        # Tolerate both shapes: { arguments: {...} } and { arguments: { arguments: {...} } }
+        raw_args = params.get("arguments", {}) or {}
+        arguments = raw_args.get("arguments", raw_args) if isinstance(raw_args, dict) else {}
 
-        # Split server__tool
         if "__" not in tool_full_name:
             return {
                 "jsonrpc": "2.0",
@@ -89,8 +112,15 @@ async def handle_mcp_message(message: dict, api_key: str) -> dict:
 
         server_name, tool_name = tool_full_name.split("__", 1)
 
-        check_rate_limit(api_key)
-        check_policy(api_key, server_name, tool_name)
+        try:
+            check_rate_limit(api_key)
+            check_policy(api_key, server_name, tool_name)
+        except HTTPException as e:
+            return {
+                "jsonrpc": "2.0",
+                "id": msg_id,
+                "error": {"code": -32603, "message": e.detail}
+            }
 
         server = get_server(server_name)
         if not server:
@@ -122,6 +152,10 @@ async def handle_mcp_message(message: dict, api_key: str) -> dict:
     elif method == "ping":
         return {"jsonrpc": "2.0", "id": msg_id, "result": {}}
 
+    # Notifications (no response needed)
+    elif method.startswith("notifications/"):
+        return None
+
     else:
         return {
             "jsonrpc": "2.0",
@@ -131,25 +165,34 @@ async def handle_mcp_message(message: dict, api_key: str) -> dict:
 
 
 @mcp_router.get("/mcp")
-async def mcp_sse(request: Request, api_key: str = Depends(require_api_key)):
+async def mcp_sse(
+    request: Request,
+    x_api_key: Optional[str] = Header(default=None),
+    api_key: Optional[str] = Query(default=None),
+):
     """
     SSE endpoint — ده الـ remote MCP entry point.
     Claude Desktop و Cursor بيتصلوا هنا مباشرة.
+    Auth: X-API-Key header OR ?api_key= query.
     """
+    key = _get_api_key(x_api_key, api_key)
     session_id = str(uuid.uuid4())
 
-    async def event_stream() -> AsyncGenerator[str, None]:
+    async def event_stream() -> AsyncGenerator[dict, None]:
         # Send endpoint event first (MCP protocol requirement)
+        # Include the api_key so the POST callback can authenticate
         yield {
             "event": "endpoint",
-            "data": f"/mcp/messages?session_id={session_id}"
+            "data": f"/mcp/messages?session_id={session_id}&api_key={key}"
         }
 
         # Keep alive
-        while not await request.is_disconnected():
-            yield {"event": "ping", "data": ""}
-            import asyncio
-            await asyncio.sleep(15)
+        try:
+            while not await request.is_disconnected():
+                yield {"event": "ping", "data": ""}
+                await asyncio.sleep(15)
+        except asyncio.CancelledError:
+            return
 
     return EventSourceResponse(event_stream())
 
@@ -157,9 +200,14 @@ async def mcp_sse(request: Request, api_key: str = Depends(require_api_key)):
 @mcp_router.post("/mcp/messages")
 async def mcp_messages(
     request: Request,
-    api_key: str = Depends(require_api_key)
+    x_api_key: Optional[str] = Header(default=None),
+    api_key: Optional[str] = Query(default=None),
 ):
     """بيستقبل الـ JSON-RPC messages من الـ MCP client."""
+    key = _get_api_key(x_api_key, api_key)
     body = await request.json()
-    response = await handle_mcp_message(body, api_key)
+    response = await handle_mcp_message(body, key)
+    # Notifications return None — respond with 204 No Content
+    if response is None:
+        return {"ok": True}
     return response
