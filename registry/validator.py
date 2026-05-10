@@ -1,3 +1,4 @@
+import asyncio
 import httpx
 from registry.registry import get_all_servers
 from gateway.models import ServerInfo
@@ -13,12 +14,15 @@ async def check_server(server: ServerInfo) -> bool:
 
 
 async def get_healthy_servers() -> list[ServerInfo]:
+    """Run all health checks in parallel — much faster on startup."""
     servers = get_all_servers()
-    results = []
-    for s in servers:
-        if await check_server(s):
-            results.append(s)
-    return results
+    if not servers:
+        return []
+    results = await asyncio.gather(
+        *(check_server(s) for s in servers),
+        return_exceptions=True,
+    )
+    return [s for s, ok in zip(servers, results) if ok is True]
 
 
 async def count_healthy() -> int:
