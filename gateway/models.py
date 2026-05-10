@@ -10,7 +10,7 @@ class ToolCallRequest(BaseModel):
 
 class ToolCallResponse(BaseModel):
     success: bool
-    result: Any
+    result: Any = None
     server: str
     tool: str
     error: Optional[str] = None
@@ -18,11 +18,13 @@ class ToolCallResponse(BaseModel):
 
 class ServerInfo(BaseModel):
     name: str
-    description: str
+    description: str = ""
     url: str
-    transport: str
-    tools: list[str]
-    trusted: bool
+    transport: str = "http"
+    tools: list[str] = Field(default_factory=list)
+    trusted: bool = True
+    added_by: Optional[str] = None
+    added_at: Optional[str] = None
 
 
 class GatewayStatus(BaseModel):
